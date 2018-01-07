@@ -1,34 +1,34 @@
 import React from 'react';
 import { connect } from 'dva';
 import styles from './IndexPage.css';
-import { Checkbox } from 'antd';
+import LayoutComponent from '../components/layout';
+import Book from '../components/book';
+import User from '../components/user';
 
-const CheckboxGroup = Checkbox.Group;
-function IndexPage() {
-  const onChange = (checkedValues) => {
-    console.log('checked = ', checkedValues);
+function IndexPage({dispatch, location, main}) {
+  const bookProps = {
+    ...main,
+    onChangeValue(value) {
+      dispatch({
+				type: 'main/changeValue',
+				payload: value,
+			})
+    }
+  };
+  const renderPage = (menus) => {
+    if (menus === 'book') {
+      return <Book {...bookProps} />;
+    }
+    return <User />
   }
-  const optionsWithDisabled = [
-    { label: 'Apple', value: 'Apple' },
-    { label: 'Pear', value: 'Pear' },
-    { label: 'Orange', value: 'Orange' },
-  ];
   return (
-    <div className={styles.normal}>
-      <h1 className={styles.title}>Yay! Welcome to dva!</h1>
-      <div className={styles.welcome} />
-      <ul className={styles.list}>
-        <li>To get started, edit <code>src/index.js</code> and save to reload.</li>
-        <li><a href="https://github.com/dvajs/dva-docs/blob/master/v1/en-us/getting-started.md">Getting Started</a></li>
-        <li><a href="https://www.npmjs.com/package/maby-cli" target="_blank;">How To Start ?</a></li>
-        <li><a href="https://github.com/Liuqing650/antd-maby" target="_blank;">Get maby-cli</a></li>
-      </ul>
-      <CheckboxGroup options={optionsWithDisabled} defaultValue={['Apple']} onChange={onChange} />
-    </div>
+    <LayoutComponent {...bookProps}>
+        {renderPage(main.selectedMenu)}
+    </LayoutComponent>
   );
 }
 
 IndexPage.propTypes = {
 };
 
-export default connect()(IndexPage);
+export default connect(({main}) => ({main}))(IndexPage);
