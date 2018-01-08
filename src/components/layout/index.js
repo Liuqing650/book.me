@@ -1,16 +1,17 @@
-import { Layout, Menu, Breadcrumb, Avatar } from 'antd';
+import { Layout, Menu, Breadcrumb, Icon } from 'antd';
 import Login from '../login';
 import styles from './index.less';
 
 const { Header, Content, Footer } = Layout;
 
 const LayoutComponent = (props) => {
-  const { isShowModal, loginMenu, onChangeValue, children} = props;
+  const { isShowModal, loginMenu, onChangeValue, isEdit, children} = props;
   const menus = {
     book: '记事本',
     user: '个人中心',
     login: loginMenu,
   }
+  console.log('isEdit----->', isEdit);
   const onLogin = () => {
     const isLogin = localStorage.getItem("isLogin");
     if (!isLogin) {
@@ -42,6 +43,10 @@ const LayoutComponent = (props) => {
   const loginProps = {
     ...props
   }
+  const cssName = `${isEdit ? styles.showTag : styles.hideTag}`;
+  const onAddItem = () => {
+    onChangeValue({isEdit: !isEdit});
+  };
   return (
     <div>
       <Layout style={{background: '#fff'}}>
@@ -59,6 +64,12 @@ const LayoutComponent = (props) => {
         <Content className={styles.content}>
           <div style={{ background: '#fff', padding: 24, minHeight: 380 }}>
             {children}
+          </div>
+          <div className={cssName}>
+            <div className={styles.downButton} onClick={onAddItem}><Icon type={isEdit ? 'caret-down' : 'caret-up'} /></div>
+            <div className={isEdit ? styles.editContent : null}>
+              
+            </div>
           </div>
         </Content>
         <Footer className={styles.footerStyle}>

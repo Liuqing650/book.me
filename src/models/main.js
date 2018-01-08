@@ -8,7 +8,8 @@ export default {
       isShowModal: false,
       loginTabsIndex: '1',
       selectedMenu: 'book',
-      loading: false
+      loading: false,
+      isEdit: false
     },
   
     subscriptions: {
