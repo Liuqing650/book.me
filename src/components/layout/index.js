@@ -1,5 +1,6 @@
 import { Layout, Menu, Breadcrumb, Icon } from 'antd';
 import Login from '../login';
+import Editor from '../edit';
 import styles from './index.less';
 
 const { Header, Content, Footer } = Layout;
@@ -11,7 +12,6 @@ const LayoutComponent = (props) => {
     user: '个人中心',
     login: loginMenu,
   }
-  console.log('isEdit----->', isEdit);
   const onLogin = () => {
     const isLogin = localStorage.getItem("isLogin");
     if (!isLogin) {
@@ -39,10 +39,7 @@ const LayoutComponent = (props) => {
       }
     });
     return outPut;
-  }
-  const loginProps = {
-    ...props
-  }
+  };
   const cssName = `${isEdit ? styles.showTag : styles.hideTag}`;
   const onAddItem = () => {
     onChangeValue({isEdit: !isEdit});
@@ -68,7 +65,7 @@ const LayoutComponent = (props) => {
           <div className={cssName}>
             <div className={styles.downButton} onClick={onAddItem}><Icon type={isEdit ? 'caret-down' : 'caret-up'} /></div>
             <div className={isEdit ? styles.editContent : null}>
-              
+              {isEdit ? <Editor {...props} /> : null}
             </div>
           </div>
         </Content>
@@ -76,7 +73,7 @@ const LayoutComponent = (props) => {
           Book.me ©2018 mabylove.cn
         </Footer>
       </Layout>
-      <Login {...loginProps} />
+      <Login {...props} />
     </div>
   );
 }

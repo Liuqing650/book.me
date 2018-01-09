@@ -8,8 +8,15 @@ export default {
       isShowModal: false,
       loginTabsIndex: '1',
       selectedMenu: 'book',
+      htmlContent: null,
       loading: false,
-      isEdit: false
+      isEdit: false,
+      lineData: [
+        {time:'2017-12-5',content:'哈哈', status: 0},
+        {time:'2017-12-8',content:'哈哈', status: 1},
+        {time:'2017-12-9',content:'哈哈', status: 0},
+        {time:'2017-12-18',content:'哈哈', status: 0},
+      ]
     },
   
     subscriptions: {
