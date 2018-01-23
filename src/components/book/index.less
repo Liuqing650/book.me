@@ -1,10 +1,57 @@
+.unselect() {
+  -moz-user-select: none;
+  -o-user-select:none;
+  -khtml-user-select:none;
+  -webkit-user-select:none;
+  -ms-user-select:none;
+  user-select:none;
+}
 .addItem {
   cursor: pointer;
   text-decoration: none;
-  -moz-user-select: none; 
-  -o-user-select:none; 
-  -khtml-user-select:none; 
-  -webkit-user-select:none; 
-  -ms-user-select:none; 
+  -moz-user-select: none;
+  -o-user-select:none;
+  -khtml-user-select:none;
+  -webkit-user-select:none;
+  -ms-user-select:none;
   user-select:none;
+}
+.tag {
+  position: absolute;
+  width: calc(~ '100% - 100px');
+}
+.showTag {
+  .tag;
+  top: calc(~ '100vh - 500px - 72px - 1px');
+}
+.hideTag {
+  .tag;
+  bottom: 73px;
+}
+.tool {
+  .btn {
+    position: relative;
+    float: right;
+    // left: calc(~ '100% - 80px');
+    margin-left: 10px;
+    min-width: 50px;
+    height: 30px;
+    padding-left: 10px;
+    padding-right: 10px;
+    text-align: center;
+    line-height: 30px;
+    background: #f5f5f5;
+    border: 1px solid transparent;
+    border-bottom: none;
+    border-radius: 5px 5px 0 0;
+    cursor: pointer;
+    .unselect();
+    &:hover {
+      background: #69C0FF;
+      color: #fff;
+    }
+  }
+}
+.editContent {
+  width: 100%;
 }

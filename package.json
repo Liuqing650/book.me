@@ -8,8 +8,7 @@
   "scripts": {
     "start": "roadhog server",
     "build": "roadhog build",
-    "lint": "eslint --ext .js src test",
-    "precommit": "npm run lint"
+    "lint": "eslint --ext .js src test"
   },
   "engines": {
     "install-node": "6.11.1"
@@ -21,7 +20,8 @@
     "braft-editor": "^1.1.8",
     "dva": "^2.1.0",
     "react": "^15.4.0",
-    "react-dom": "^15.4.0"
+    "react-dom": "^15.4.0",
+    "react-quill": "^1.2.2"
   },
   "devDependencies": {
     "babel-eslint": "^7.1.1",

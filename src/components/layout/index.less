@@ -1,7 +1,7 @@
 @ease-in-out              : cubic-bezier(.645, .045, .355, 1);
 .headerStyle {
-  position: fixed; 
-  width: 100%; 
+  position: fixed;
+  width: 100%;
   background: #fff;
 }
 .content {
@@ -10,41 +10,9 @@
   height: calc(~ '100vh - 64px - 72px - 1px');
   overflow: hidden;
 }
-.tag {
-  position: absolute;
-  width: calc(~ '100% - 100px');
-}
-.showTag {
-  .tag;
-  top: calc(~ '100vh - 500px - 72px - 1px');
-}
-.hideTag {
-  .tag;
-  bottom: 73px;
-}
 .footerStyle {
-  text-align: center; 
+  text-align: center;
   line-height: 24px;
   background: #fff;
   border-top: 1px solid #e8e8e8;
-}
-.downButton {
-  position: relative;
-  left: calc(~ '100% - 80px');
-  width: 50px;
-  height: 30px;
-  text-align: center;
-  line-height: 30px;
-  background: #f5f5f5;
-  border: 1px solid transparent;
-  border-bottom: none;
-  border-radius: 5px 5px 0 0;
-  &:hover {
-    background: #69C0FF;
-    color: #fff;
-  }
-}
-.editContent {
-  width: 100%;
-  border-top: 1px solid #69C0FF;
 }
