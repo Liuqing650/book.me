@@ -1,12 +1,11 @@
 import React from 'react';
 import ReactQuill from 'react-quill';
-import 'react-quill/dist/quill.snow.css';
-// import styles from './index.less';
+// import 'react-quill/dist/quill.snow.css';
+import styles from './index.less';
 
 class Editor extends React.Component {
   handleChange = (content) => {
-    const { onChange } = this.props;
-    onChange({ htmlContent: content });
+    this.props.onChange(content);
   }
   render () {
     const heightDoc = document.scrollingElement.clientHeight;

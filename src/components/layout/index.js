@@ -47,7 +47,7 @@ const LayoutComponent = (props) => {
           <Menu
             mode="horizontal"
             onClick={handleClick}
-            defaultSelectedKeys={['1']}
+            defaultSelectedKeys={['book']}
             style={{ lineHeight: '64px' }}
           >
             {creatMenu(menus)}
