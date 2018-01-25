@@ -24,6 +24,7 @@ export default {
         temp: {},
         index: 0,
         value: '',
+        jump: 0,
         copy: false,
         valid: true
       }
@@ -91,8 +92,15 @@ export default {
         return { ...state };
       },
       changeLine(state, action) {
-        state.mock.temp = state.mock.data[action.payload];
-        state.mock.index = action.payload;
+        let index = action.payload;
+        if (index > state.mock.data.length - 1) {
+          index = state.mock.data.length - 1;
+        }
+        if (index < 0) {
+          index = 0;
+        }
+        state.mock.temp = state.mock.data[index];
+        state.mock.index = index;
         state.mock.valid = true;
         state.mock.value = '';
         return { ...state };

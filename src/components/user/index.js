@@ -1,7 +1,7 @@
 import React from 'react';
 import mockData from '../../utils/mock';
 import styles from './index.less';
-import { Button, Row, Col, Input, Icon, Progress } from 'antd';
+import { Button, Row, Col, Input, Icon, Progress, InputNumber, Switch } from 'antd';
 const User = ({
   mock,
   onChangeLine,
@@ -26,17 +26,27 @@ const User = ({
       onChangeLine(mock.index + 1)
     }
   };
+  const onJumeChange = (even) => {
+    mock.jump = even;
+    onChangeValue({ mock });
+  };
+  const onJumeLine = () => {
+    if (mock.data.length === 0) {
+      setup();
+    }
+    onChangeLine(mock.jump - 1);
+  };
   const changeCopy = () => {
     mock.copy = !mock.copy;
     onChangeValue({ mock });
   };
   const cssName = !mock.copy ? styles.text : null;
-  const percent = Math.floor((mock.index * 100) / mockData.length * 100) / 100;
+  const percent = mock.data.length > 0 ? Math.floor(((mock.index + 1) * 100) / mockData.length * 100) / 100 : 0;
   return (
     <div className={styles.warp}>
       <Row className={styles.line}>
-        <Col span={2}>
-          第{mock.index + 1}行 {mock.temp.name}：
+        <Col span={3}>
+          第{mock.data.length > 0 ? (mock.index + 1) : 0}行 {mock.temp.name}：
         </Col>
         <Col span={12}>
           <div className={cssName}>{mock.temp.value ? mock.temp.value : ''}</div>
@@ -44,7 +54,7 @@ const User = ({
         </Col>
       </Row>
       <Row className={styles.line}>
-        <Col span={2}>
+        <Col span={3}>
             输入：
         </Col>
         <Col span={12}>
@@ -59,7 +69,11 @@ const User = ({
           <Button onClick={() => onChangeLine(mock.index + 1)} disabled={mock.valid}>下一行</Button>
         </Col>
         <Col span={3}>
-          <Button onClick={changeCopy}>{mock.copy ? '不可复制' : '可复制'}</Button>
+          复制: <Switch checkedChildren="开" unCheckedChildren="关" checked={mock.copy} onChange={changeCopy} />
+        </Col>
+        <Col span={6}>
+          <InputNumber min={0} max={mockData.length} onChange={onJumeChange} placeholder="跳行" />
+          <Button onClick={onJumeLine}>跳行</Button>
         </Col>
       </Row>
     </div>
