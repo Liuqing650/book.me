@@ -1,7 +1,7 @@
 import React from 'react';
 import mockData from '../../utils/mock';
 import styles from './index.less';
-import { Button, Row, Col, Input, Icon } from 'antd';
+import { Button, Row, Col, Input, Icon, Progress } from 'antd';
 const User = ({
   mock,
   onChangeLine,
@@ -31,14 +31,16 @@ const User = ({
     onChangeValue({ mock });
   };
   const cssName = !mock.copy ? styles.text : null;
+  const percent = Math.floor((mock.index * 100) / mockData.length * 100) / 100;
   return (
     <div className={styles.warp}>
       <Row className={styles.line}>
         <Col span={2}>
-          第{mock.index + 1}行：
+          第{mock.index + 1}行 {mock.temp.name}：
         </Col>
         <Col span={12}>
           <div className={cssName}>{mock.temp.value ? mock.temp.value : ''}</div>
+          <Progress percent={percent} status="active" />
         </Col>
       </Row>
       <Row className={styles.line}>
