@@ -105,6 +105,17 @@ export default {
         state.mock.valid = true;
         state.mock.value = '';
         return { ...state };
+      },
+      resetMock(state, action) {
+        state.mock.data = [];
+        state.mock.temp = {};
+        state.mock.index = 0;
+        state.mock.value = '';
+        state.mock.jump = 0;
+        state.mock.copy = false;
+        state.mock.next = false;
+        state.mock.valid = true;
+        return {...state};
       }
     },
 

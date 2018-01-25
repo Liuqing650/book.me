@@ -5,7 +5,8 @@ import { Button, Row, Col, Input, Icon, Progress, InputNumber, Switch, Divider }
 const User = ({
   mock,
   onChangeLine,
-  onChangeValue
+  onChangeValue,
+  onResetMock
 }) => {
   const setup = () => {
     mock.data = mockData;
@@ -41,6 +42,9 @@ const User = ({
     onChangeValue({ mock });
   };
   const changeNext = () => {
+    if (mock.data.length === 0) {
+      setup();
+    }
     mock.next = !mock.next;
     onChangeValue({ mock });
   };
@@ -80,6 +84,9 @@ const User = ({
         <Col lg={{ span: 6 }} xs={{ span: 24 }} className={styles.line}>
           <InputNumber min={0} max={mockData.length} onChange={onJumeChange} placeholder="跳行" />
           <Button onClick={onJumeLine}>跳行</Button>
+        </Col>
+        <Col lg={{ span: 3 }} xs={{ span: 24 }} className={styles.line}>
+          <Button onClick={onResetMock}>重置</Button>
         </Col>
       </Row>
     </div>

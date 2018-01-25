@@ -54,6 +54,12 @@ function IndexPage({dispatch, location, main}) {
         type: 'main/changeLine',
         payload: index,
       })
+    },
+    onResetMock(index) {
+      dispatch({
+        type: 'main/resetMock',
+        payload: index,
+      })
     }
   };
   const renderPage = (menus) => {
