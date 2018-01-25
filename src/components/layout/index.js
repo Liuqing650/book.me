@@ -34,7 +34,7 @@ const LayoutComponent = (props) => {
       if (key === 'login') {
         outPut.push(<Menu.Item key={key} style={{float: 'right'}}>{menus[key]}</Menu.Item>);
       } else {
-        outPut.push(<Menu.Item key={key}>{menus[key]}</Menu.Item>);
+        outPut.push(<Menu.Item disabled={key === 'book'} key={key}>{menus[key]}</Menu.Item>);
       }
     });
     return outPut;
