@@ -1,4 +1,3 @@
-
 export default {
 
     namespace: 'main',
@@ -7,7 +6,7 @@ export default {
       loginMenu: '登录',
       isShowModal: false,
       loginTabsIndex: '1',
-      selectedMenu: 'book',
+      selectedMenu: 'user',
       loading: false,
       book: {
         id: '',
@@ -19,7 +18,15 @@ export default {
       lineData: [
         { time: '2017-12-5', content: '哈哈', status: 0 },
         { time: '2017-12-8', content: '哈哈', status: 1 },
-      ]
+      ],
+      mock: {
+        data: [],
+        temp: {},
+        index: 0,
+        value: '',
+        copy: false,
+        valid: true
+      }
     },
 
     subscriptions: {
@@ -81,6 +88,13 @@ export default {
       viewContent(state, action) {
         state.book.isEdit = false;
         state.lineData.push(action.payload);
+        return { ...state };
+      },
+      changeLine(state, action) {
+        state.mock.temp = state.mock.data[action.payload];
+        state.mock.index = action.payload;
+        state.mock.valid = true;
+        state.mock.value = '';
         return { ...state };
       }
     },

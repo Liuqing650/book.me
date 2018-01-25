@@ -48,13 +48,19 @@ function IndexPage({dispatch, location, main}) {
         type: 'main/deleteBook',
         payload: {...data, index},
       })
+    },
+    onChangeLine(index) {
+      dispatch({
+        type: 'main/changeLine',
+        payload: index,
+      })
     }
   };
   const renderPage = (menus) => {
     if (menus === 'book') {
       return <Book {...bookProps} />;
     } else if (menus === 'user') {
-      return <User />;
+      return <User {...bookProps} />;
     }
   };
   return (
