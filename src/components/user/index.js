@@ -44,7 +44,7 @@ const User = ({
   const percent = mock.data.length > 0 ? Math.floor(((mock.index + 1) * 100) / mockData.length * 100) / 100 : 0;
   return (
     <div className={styles.warp}>
-      <Row className={styles.line}>
+      <Row>
         <Col lg={{ span: 3}} xs={{ span: 24 }}>
           第{mock.data.length > 0 ? (mock.index + 1) : 0}行 {mock.temp.name}：
         </Col>
