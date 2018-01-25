@@ -26,6 +26,7 @@ export default {
         value: '',
         jump: 0,
         copy: false,
+        next: false,
         valid: true
       }
     },
