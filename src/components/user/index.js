@@ -45,33 +45,33 @@ const User = ({
   return (
     <div className={styles.warp}>
       <Row className={styles.line}>
-        <Col span={3}>
+        <Col lg={{ span: 3}} xs={{ span: 24 }}>
           第{mock.data.length > 0 ? (mock.index + 1) : 0}行 {mock.temp.name}：
         </Col>
-        <Col span={12}>
+        <Col lg={{ span: 12 }} xs={{ span: 24 }}>
           <div className={cssName}>{mock.temp.value ? mock.temp.value : ''}</div>
           <Progress percent={percent} status="active" />
         </Col>
       </Row>
       <Row className={styles.line}>
-        <Col span={3}>
+        <Col lg={{ span: 3 }} xs={{ span: 24 }}>
             输入：
         </Col>
-        <Col span={12}>
+        <Col lg={{ span: 12 }} xs={{ span: 24 }}>
           <Input onChange={onChangeInput} value={mock.value} onPressEnter={onEnter} suffix={mock.valid ? <Icon type="question" /> : <Icon type="check" />} />
         </Col>
       </Row>
-      <Row className={styles.line}>
-        <Col span={3}>
+      <Row>
+        <Col lg={{ span: 3 }} xs={{ span: 24 }} className={styles.line}>
           <Button onClick={setup}>开始</Button>
         </Col>
-        <Col span={3}>
+        <Col lg={{ span: 3 }} xs={{ span: 24 }} className={styles.line}>
           <Button onClick={() => onChangeLine(mock.index + 1)} disabled={mock.valid}>下一行</Button>
         </Col>
-        <Col span={3}>
+        <Col lg={{ span: 3 }} xs={{ span: 24 }} className={styles.line}>
           复制: <Switch checkedChildren="开" unCheckedChildren="关" checked={mock.copy} onChange={changeCopy} />
         </Col>
-        <Col span={6}>
+        <Col lg={{ span: 6 }} xs={{ span: 24 }} className={styles.line}>
           <InputNumber min={0} max={mockData.length} onChange={onJumeChange} placeholder="跳行" />
           <Button onClick={onJumeLine}>跳行</Button>
         </Col>
