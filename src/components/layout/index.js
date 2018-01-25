@@ -9,6 +9,7 @@ const LayoutComponent = (props) => {
   const menus = {
     book: '记事本',
     user: '个人中心',
+    music: '列表',
     login: loginMenu,
   }
   const onLogin = () => {
@@ -33,8 +34,8 @@ const LayoutComponent = (props) => {
     Object.keys(data).map((key) => {
       if (key === 'login') {
         outPut.push(<Menu.Item key={key} style={{float: 'right'}}>{menus[key]}</Menu.Item>);
-      } else {
-        outPut.push(<Menu.Item disabled={key === 'book'} key={key}>{menus[key]}</Menu.Item>);
+      } else if (key !== 'book') {
+        outPut.push(<Menu.Item key={key}>{menus[key]}</Menu.Item>);
       }
     });
     return outPut;

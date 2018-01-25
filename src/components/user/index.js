@@ -73,8 +73,10 @@ const User = ({
         <Col lg={{ span: 3 }} xs={{ span: 24 }} className={styles.line}>
           <Button onClick={setup}>开始</Button>
         </Col>
-        <Col lg={{ span: 3 }} xs={{ span: 24 }} className={styles.line}>
+        <Col lg={{ span: 6 }} xs={{ span: 24 }} className={styles.line}>
           <Button onClick={() => onChangeLine(mock.index + 1)} disabled={mock.next ? false : mock.valid}>下一行</Button>
+          <Divider type="vertical" />
+          <Button onClick={() => onChangeLine(mock.index - 1)} disabled={mock.next ? false : mock.valid}>上一行</Button>
         </Col>
         <Col lg={{ span: 6 }} xs={{ span: 24 }} className={styles.line}>
           复制: <Switch checkedChildren="开" unCheckedChildren="关" checked={mock.copy} onChange={changeCopy} />

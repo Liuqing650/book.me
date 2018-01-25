@@ -3,6 +3,7 @@ import { connect } from 'dva';
 import LayoutComponent from '../components/layout';
 import Book from '../components/book';
 import User from '../components/user';
+import ListCom from '../components/music';
 
 function IndexPage({dispatch, location, main}) {
   const bookProps = {
@@ -67,6 +68,8 @@ function IndexPage({dispatch, location, main}) {
       return <Book {...bookProps} />;
     } else if (menus === 'user') {
       return <User {...bookProps} />;
+    } else if (menus === 'music') {
+      return <ListCom {...bookProps} />;
     }
   };
   return (
