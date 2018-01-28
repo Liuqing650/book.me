@@ -1,9 +1,10 @@
 import React from 'react';
-import ReactQuill from 'react-quill';
+// import ReactQuill from 'react-quill';
 // import 'react-quill/dist/quill.snow.css';
+import SlateEditor from './slateEditor';
 import styles from './index.less';
 
-class Editor extends React.Component {
+class MyEditor extends React.Component {
   handleChange = (content) => {
     this.props.onChange(content);
   }
@@ -15,38 +16,38 @@ class Editor extends React.Component {
       height: Math.round(heightDoc - 500 - 72 - 1),
       border: '0',
     };
-    const editorProps = {
-      theme: 'snow',
-      style: editStyle,
-      placeholder: '填写一份临时笔记吧！',
-      modules: {
-        toolbar: [
-          [{ 'font': [] }],
-          [{ 'header': [1, 2, false] }],
-          ['bold', 'italic', 'underline', 'strike'],
-          [{ 'list': 'ordered' }, { 'list': 'bullet' }, { 'indent': '-1' }, { 'indent': '+1' }],
-          ['clean'],
-          [{ 'script': 'sub' }, { 'script': 'super' }],
-          ['blockquote', 'code-block'],
-          [{ 'color': colors }, { 'background': colors }],
-          ['link', 'image', 'video'],
-          ['clean']
-        ],
-      },
-      formats: [
-        'header',
-        'bold', 'italic', 'underline', 'strike', 'blockquote', 'code-block',
-        'list', 'bullet', 'indent', 'align', 'direction',
-        'link', 'image', 'video', 'color', 'script', 'font', 'background'
-      ],
-      value: content,
-      onChange: this.handleChange
-    }
+    // const editorProps = {
+    //   theme: 'snow',
+    //   style: editStyle,
+    //   placeholder: '填写一份临时笔记吧！',
+    //   modules: {
+    //     toolbar: [
+    //       [{ 'font': [] }],
+    //       [{ 'header': [1, 2, false] }],
+    //       ['bold', 'italic', 'underline', 'strike'],
+    //       [{ 'list': 'ordered' }, { 'list': 'bullet' }, { 'indent': '-1' }, { 'indent': '+1' }],
+    //       ['clean'],
+    //       [{ 'script': 'sub' }, { 'script': 'super' }],
+    //       ['blockquote', 'code-block'],
+    //       [{ 'color': colors }, { 'background': colors }],
+    //       ['link', 'image', 'video'],
+    //       ['clean']
+    //     ],
+    //   },
+    //   formats: [
+    //     'header',
+    //     'bold', 'italic', 'underline', 'strike', 'blockquote', 'code-block',
+    //     'list', 'bullet', 'indent', 'align', 'direction',
+    //     'link', 'image', 'video', 'color', 'script', 'font', 'background'
+    //   ],
+    //   value: content,
+    //   onChange: this.handleChange
+    // }
     return (
       <div className={`bookEditor`}>
-        <ReactQuill {...editorProps}/>
+        <SlateEditor />
       </div>
     )
   }
 }
-export default Editor;
+export default MyEditor;

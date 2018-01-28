@@ -6,7 +6,7 @@ export default {
       loginMenu: '登录',
       isShowModal: false,
       loginTabsIndex: '1',
-      selectedMenu: 'user',
+      selectedMenu: 'book',
       loading: false,
       book: {
         id: '',

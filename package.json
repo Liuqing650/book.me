@@ -19,9 +19,13 @@
     "babel-runtime": "^6.9.2",
     "braft-editor": "^1.1.8",
     "dva": "^2.1.0",
+    "immutable": "^3.8.2",
     "react": "^15.4.0",
     "react-dom": "^15.4.0",
-    "react-quill": "^1.2.2"
+    "react-quill": "^1.2.2",
+    "slate": "^0.32.2",
+    "slate-markdown": "^0.1.1",
+    "slate-react": "^0.11.2"
   },
   "devDependencies": {
     "babel-eslint": "^7.1.1",

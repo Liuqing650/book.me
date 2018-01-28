@@ -2,7 +2,7 @@ import React from 'react';
 import { Divider, Timeline, Icon, Row, Col } from 'antd';
 import moment from 'moment';
 import 'moment/locale/zh-cn';
-import Editor from '../edit';
+import MyEditor from '../edit';
 import styles from './index.less';
 moment.locale('zh-cn');
 const Book = ({
@@ -135,7 +135,7 @@ const Book = ({
           {createTool(toolConfig)}
         </div>
         <div className={book.isEdit ? styles.editContent : null}>
-          {book.isEdit ? <Editor {...editorProps} />  : null}
+          {book.isEdit ? <MyEditor {...editorProps} />  : null}
         </div>
       </div>
     </div>
