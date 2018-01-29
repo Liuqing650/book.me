@@ -3,6 +3,7 @@ import React from 'react';
 // import 'react-quill/dist/quill.snow.css';
 import SlateEditor from './slateEditor';
 import styles from './index.less';
+import './edit.less'
 
 class MyEditor extends React.Component {
   handleChange = (content) => {

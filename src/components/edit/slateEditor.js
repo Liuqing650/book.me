@@ -1,28 +1,22 @@
 import React from 'react';
-import { Editor } from 'slate-react';
-import MarkdownPlugin from 'slate-markdown';
+import CheckListItem from './checkList';
 class SlateEditor extends React.Component {
   constructor(props) {
     super(props);
-    const markdown = MarkdownPlugin();
     this.state = {
-      state: null,
-      plugins: [markdown],
+      value: null,
     };
   }
-  onChange = state => {
+  onChange = (state) => {
     this.setState({
       state,
     });
   };
   render() {
-    const { state, plugins } = this.state;
+    const { value } = this.state;
     return (
       <div>
-        <Editor
-          plugins={plugins}
-          autoFocus
-         />
+        <CheckListItem />
       </div>
     );
   }
