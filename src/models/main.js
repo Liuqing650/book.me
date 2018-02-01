@@ -6,7 +6,7 @@ export default {
       loginMenu: '登录',
       isShowModal: false,
       loginTabsIndex: '1',
-      selectedMenu: 'book',
+      selectedMenu: 'user',
       loading: false,
       book: {
         id: '',
@@ -19,15 +19,88 @@ export default {
         { time: '2017-12-5', content: '哈哈', status: 0 },
         { time: '2017-12-8', content: '哈哈', status: 1 },
       ],
-      mock: {
-        data: [],
-        temp: {},
-        index: 0,
-        value: '',
-        jump: 0,
-        copy: false,
-        next: false,
-        valid: true
+      treeData: {
+        "id": "root",
+        "name": "flare",
+        "children": [{
+          "name": "analytics",
+          "children": [{
+            "name": "cluster",
+            "children": [{
+              "name": "AgglomerativeCluster",
+            }, {
+              "name": "CommunityStructure",
+            }, {
+              "name": "HierarchicalCluster",
+            }, {
+              "name": "MergeEdge",
+            }]
+          }, {
+            "name": "tree",
+            "children": [{
+              "name": "BetweennessCentrality",
+            }, {
+              "name": "LinkDistance",
+            }, {
+              "name": "MaxFlowMinCut",
+            }, {
+              "name": "ShortestPaths",
+            }, {
+              "name": "SpanningTree",
+            }]
+          }, {
+            "name": "optimization",
+            "children": [{
+              "name": "AspectRatioBanker"
+            }]
+          }]
+        }, {
+          "name": "animate",
+          "children": [{
+            "name": "Easing",
+          }, {
+            "name": "FunctionSequence",
+          }, {
+            "name": "interpolate",
+            "children": [{
+              "name": "ArrayInterpolator",
+            }, {
+              "name": "ColorInterpolator",
+            }, {
+              "name": "DateInterpolator",
+            }, {
+              "name": "Interpolator",
+            }, {
+              "name": "MatrixInterpolator",
+            }, {
+              "name": "NumberInterpolator",
+            }, {
+              "name": "ObjectInterpolator",
+            }, {
+              "name": "PointInterpolator",
+            }, {
+              "name": "RectangleInterpolator",
+            }]
+          }, {
+            "name": "ISchedulable",
+          }, {
+            "name": "Parallel",
+          }, {
+            "name": "Pause",
+          }, {
+            "name": "Scheduler",
+          }, {
+            "name": "Sequence",
+          }, {
+            "name": "Transition",
+          }, {
+            "name": "Transitioner",
+          }, {
+            "name": "TransitionEvent",
+          }, {
+            "name": "Tween",
+          }]
+        }]
       }
     },
 
@@ -105,17 +178,6 @@ export default {
         state.mock.valid = true;
         state.mock.value = '';
         return { ...state };
-      },
-      resetMock(state, action) {
-        state.mock.data = [];
-        state.mock.temp = {};
-        state.mock.index = 0;
-        state.mock.value = '';
-        state.mock.jump = 0;
-        state.mock.copy = false;
-        state.mock.next = false;
-        state.mock.valid = true;
-        return {...state};
       }
     },
 

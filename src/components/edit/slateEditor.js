@@ -1,5 +1,5 @@
 import React from 'react';
-import CheckListItem from './checkList';
+// import CheckListItem from './checkList';
 class SlateEditor extends React.Component {
   constructor(props) {
     super(props);
@@ -16,7 +16,7 @@ class SlateEditor extends React.Component {
     const { value } = this.state;
     return (
       <div>
-        <CheckListItem />
+        {/* <CheckListItem /> */}
       </div>
     );
   }
