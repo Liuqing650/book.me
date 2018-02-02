@@ -3,11 +3,48 @@ import G6 from '@antv/g6';
 import Plugins from '@antv/g6-plugins';
 import html2canvas from 'html2canvas';
 // const miniMap = new Plugins['tool.minimap']();
+console.log(G6);
 let Global = G6.Global;
 let Util = G6.Util;
+let Matrix = G6.Matrix;
 function generateUniqueId(isDeep) {
   return isDeep ? `rc-g6-1` : `rc-g6-0`;
 }
+G6.registerEdge('treeEdge', {
+  draw(cfg, group){
+    console.log('cfg--->', cfg);
+    group.addShape('rect', {
+      attrs: {
+        x: (cfg.points[0].x + cfg.points[1].x - 155)/2,
+        y: (cfg.points[0].y + cfg.points[1].y - 35)/2,
+        width: 150,
+        height: 30,
+        stroke: 'black',
+        fill: '#000'
+      }
+    });
+    group.addShape('text', {
+      attrs: {
+        x: (cfg.points[0].x + cfg.points[1].x)/2,
+        y: (cfg.points[0].y + cfg.points[1].y)/2,
+        fill: '#f00',
+        lineWidth: 10,
+        text: '我是一个自定义边（edge）',
+        textAlign: 'center'
+      }
+    });
+    return group.addShape('polyline', {
+      attrs: {
+        points: [
+          [cfg.points[0].x, cfg.points[0].y],
+          [cfg.points[1].x, cfg.points[1].y]
+        ],
+        stroke: cfg.color,
+        lineWidth: cfg.size
+      }
+    });
+  }
+})
 class Chart extends Component {
   constructor(props, context) {
     super(props);
@@ -31,7 +68,7 @@ class Chart extends Component {
 		};
 
 		this.nodeStyle = {
-      lineWidth: 1,
+      lineWidth: 1
 		};
   }
 
@@ -57,10 +94,25 @@ class Chart extends Component {
     // graph.edge().shape('smooth');
     graph.edge().label((data) => {
       const allData = [this.graph.save().source];
+      const parent = this.findNodeDataById(allData, data.source);
       const node = this.findNodeDataById(allData, data.target);
-      // console.log('node--->', node)
-      return node.name;
-    })
+      const angle = (start,end) => {
+        const diff_x = end.x - start.x;
+        const diff_y = end.y - start.y;
+        //返回角度,不是弧度
+        return 360*Math.atan(diff_y/diff_x)/(2*Math.PI);
+      }
+      return {
+        text: node.name,
+        lineWidth: node.name.length * 2,
+        fill: 'green',
+        // textBaseline: 'Bottom',
+        rotate: angle(parent, node)
+      };
+    }).style({
+      lineWidth: 1,
+      stroke: 'green'
+    });
     graph.edge().color((data) => {
       const allData = [this.graph.save().source];
       const node = this.findNodeDataById(allData, data.target);
@@ -100,7 +152,7 @@ class Chart extends Component {
     });
     this.deepGraphContainer = deepGraph.get('graphContainer');
     deepGraph.node().label('name').style(this.nodeStyle);
-    // graph.edge().shape('smooth');
+    deepGraph.edge().shape('smooth');
     deepGraph.edge().label((data) => {
       const allData = [this.deepGraph.save().source];
       const node = this.findNodeDataById(allData, data.target);
@@ -130,7 +182,7 @@ class Chart extends Component {
     this.graph.autoZoom(); // 缩放到适应大小
     this.deepGraph.autoSize();
     setTimeout(() => {
-      this.downloadImageNew();
+      this.drawImageUpdate();
     }, 1000);
   };
 
@@ -174,6 +226,20 @@ class Chart extends Component {
       this.graph.updateMatrix(matrixStash); // 还原矩阵
       this.graph.refresh();
     });
+  }
+
+  drawImageUpdate = () => {
+    const matrixStash = this.graph.getMatrix();
+    const canvasArr = this.deepGraph.get('graphContainer').getElementsByTagName('canvas');
+    canvasArr[0].getContext('2d').drawImage(canvasArr[1], 0, 0);
+    const dataURL = canvasArr[0].toDataURL('image/jpeg');
+    const link = document.createElement('a');
+    const saveName = 'graph.jpeg';
+    link.download = saveName;
+    link.href = dataURL.replace('image/jpeg', 'image/octet-stream');
+    link.click();
+    this.deepGraph.updateMatrix(matrixStash); // 还原矩阵
+    this.deepGraph.refresh();
   }
 
   downloadImageNew = () => {
