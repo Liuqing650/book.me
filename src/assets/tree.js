@@ -1,21 +1,36 @@
-import React, { Component } from 'react';
+import React, { Component, PropTypes } from 'react';
 import G6 from '@antv/g6';
-import Plugins from '@antv/g6-plugins';
 import html2canvas from 'html2canvas';
-// const miniMap = new Plugins['tool.minimap']();
-let Global = G6.Global;
-let Util = G6.Util;
+import Button from 'components/lib/button';
+const Global = G6.Global;
+const Util = G6.Util;
 function generateUniqueId(isDeep) {
   return isDeep ? `rc-g6-1` : `rc-g6-0`;
 }
-class Chart extends Component {
-  constructor(props, context) {
+Global.nodeStyle = {
+  stroke: '#666',
+  fill: '#fff',
+  lineWidth: 1,
+  radius: 4,
+  fillOpacity: 0.10
+};
+class TreeChart extends Component {
+  static propTypes = {
+    data: PropTypes.object,
+    height: PropTypes.number,
+    fitViewPadding: PropTypes.number,
+    layoutCfg: PropTypes.object,
+    grid: PropTypes.object,
+    saveData: PropTypes.func
+  }
+  constructor(props) {
     super(props);
     this.state = {
       node: {},
       isSave: false, // 存储状态
       isRead: false, // 阅读模式
-    }
+      url: '',
+    };
     // id生成函数
     this.graphId = generateUniqueId();
     this.graph = null;
@@ -26,13 +41,13 @@ class Chart extends Component {
     this.input = this.createInput();
 
     this.mouseEnterNodeStyle = {
-			lineWidth: 2,
+      lineWidth: 2,
       stroke: '#FF0',
-		};
+    };
 
-		this.nodeStyle = {
+    this.nodeStyle = {
       lineWidth: 1,
-		};
+    };
   }
 
   componentDidMount() {
@@ -54,34 +69,25 @@ class Chart extends Component {
     this.graphContainer.appendChild(this.input);
     graph.addBehaviour('default', ['clickActive', 'clickBlankClearActive']);
     graph.node().label('name').style(this.nodeStyle);
-    // graph.edge().shape('smooth');
+    graph.edge().shape('smooth');
     graph.edge().label((data) => {
       const allData = [this.graph.save().source];
       const node = this.findNodeDataById(allData, data.target);
-      // console.log('node--->', node)
       return node.name;
-    })
-    graph.edge().color((data) => {
-      const allData = [this.graph.save().source];
-      const node = this.findNodeDataById(allData, data.target);
-      return node.name.indexOf('an') > -1 ? '#FF0' : '#222';
-    })
+    });
     graph.edge().tooltip((data) => {
       const allData = [this.graph.save().source];
       const node = this.findNodeDataById(allData, data.target);
-      // console.log('node--->', node)
-      return [['路径标识',node.name]];
-    })
-    graph.node().tooltip(function(obj){
+      return [['路径标识', node.name]];
+    });
+    graph.node().tooltip((obj) => {
       return [
         ['简要信息', obj.name]
-      ]
+      ];
     });
     graph.source(this.props.data);
     this.graph = graph;
     this.graph.render();
-    // this.graph.on('itemmouseenter', this.onMouseEnter);
-    // this.graph.on('itemmouseleave', this.onMouseLever);
 
     this.graph.on('dblclick', this.onDbClick);
     this.input.on('keydownInput', this.onKeyDownInput);
@@ -96,22 +102,22 @@ class Chart extends Component {
         y: 0
       },
       ...props,
-      height: '1000'
+      height: 1000
     });
     this.deepGraphContainer = deepGraph.get('graphContainer');
     deepGraph.node().label('name').style(this.nodeStyle);
-    // graph.edge().shape('smooth');
+    deepGraph.edge().shape('smooth');
     deepGraph.edge().label((data) => {
       const allData = [this.deepGraph.save().source];
       const node = this.findNodeDataById(allData, data.target);
       // console.log('node--->', node)
       return node.name;
-    })
+    });
     deepGraph.edge().color((data) => {
       const allData = [this.deepGraph.save().source];
       const node = this.findNodeDataById(allData, data.target);
       return node.name.indexOf('an') > -1 ? '#FF0' : '#222';
-    })
+    });
     deepGraph.source(this.props.data);
     this.deepGraph = deepGraph;
     this.deepGraph.render();
@@ -130,9 +136,49 @@ class Chart extends Component {
     this.graph.autoZoom(); // 缩放到适应大小
     this.deepGraph.autoSize();
     setTimeout(() => {
-      this.downloadImageNew();
+      // this.downloadImageNew();
+      this.drawImageUpdate();
     }, 1000);
   };
+
+  drawImageUpdate = () => {
+    const canvasArr = this.deepGraph.get('graphContainer').getElementsByTagName('canvas');
+    canvasArr[0].getContext('2d').drawImage(canvasArr[1], 0, 0);
+    const dataURL = canvasArr[0].toDataURL('image/jpeg');
+    const link = document.createElement('a');
+    const saveName = 'graph.jpeg';
+    link.download = saveName;
+    link.href = dataURL.replace('image/jpeg', 'image/octet-stream');
+    link.click();
+
+    // const canvas = document.createElement('canvas');
+    // const ctx = canvas.getContext('2d');
+    // 获取数组
+    // const data = <svg xmlns="http://www.w3.org/2000/svg" width="200" height="200"><foreignObject width="100%" height="100%">{this.graphContainer}</foreignObject></svg>;
+    // const DOMURL = window.URL || window.webkitURL || window;
+    // const img = new Image();
+    // const svg = new Blob([data], { type: 'image/svg+xml;charset=utf-8' });
+    // const url = DOMURL.createObjectURL(svg);
+    // img.onload = () => {
+    //   ctx.drawImage(img, 0, 0);
+    //   DOMURL.revokeObjectURL(url);
+    // };
+    // const blobToDataURL = (blob, callback) => {
+    //   console.log('blob---->', blob);
+    //   const file = new FileReader();
+    //   file.onload = (even) => callback(even.target.result);
+    //   file.readAsDataURL(blob);
+    // };
+    // const changeStata = (base) => {
+    //   this.setState({
+    //     url: base
+    //   });
+    // };
+    // changeStata(url);
+    // blobToDataURL(url, (base) => {
+    //   changeStata(base);
+    // });
+  }
 
   findNodeDataById = (nodeData, nodeId) => {
     let output = {};
@@ -147,7 +193,7 @@ class Chart extends Component {
           if (!stop && item.children) {
             loop(item.children);
           }
-        })
+        });
       }
     };
     loop(nodeData);
@@ -156,14 +202,6 @@ class Chart extends Component {
 
   downloadImage = () => {
     const matrixStash = this.graph.getMatrix(); // 缓存当前矩阵
-    this.graph.changeSize(1600, 1200);
-    // const tempCanvas = document.createElement('canvas');
-    // var canvas = this.graph.get('graphContainer').getElementsByTagName('canvas');
-    // console.log('canvas--->', canvas[0]);
-    // var ctx = canvas[1].getContext("2d");
-    // ctx.drawImage(canvas[0], 0, 0);
-    // ctx.drawImage(canvas[1], 0, 0);
-    // .drawImage(canvas, 0, 0);
     html2canvas(this.graph.get('graphContainer')).then((canvas) => {
       const dataURL = canvas.toDataURL('image/png');
       const link = document.createElement('a');
@@ -176,39 +214,20 @@ class Chart extends Component {
     });
   }
 
-  downloadImageNew = () => {
-    const matrixStash = this.graph.getMatrix(); // 缓存当前矩阵
-    console.log('this.deepGraph--->', this.deepGraph);
-    // const copyGraph = Object.assign({}, this.graph);
-
-    html2canvas(this.deepGraph.get('graphContainer')).then((canvas) => {
-      const dataURL = canvas.toDataURL('image/png');
-      const link = document.createElement('a');
-      const saveName = 'graph.png';
-      link.download = saveName;
-      link.href = dataURL.replace('image/png', 'image/octet-stream');
-      link.click();
-      this.deepGraph.updateMatrix(matrixStash); // 还原矩阵
-      this.deepGraph.refresh();
-    });
-  }
-
   render() {
     const g6Wrapper = {
-      width: 800,
       border: '1px solid #999',
-    }
+    };
     const hideWrapper = {
       display: 'none'
-    }
+    };
     return (
       <div>
-        <button onClick={this.downloadCurrentImage}>下载</button>
+        <Button onClick={this.downloadCurrentImage}>下载</Button>
         <div id={this.graphId} style={g6Wrapper}></div>
         <div id={this.deepGraphId} style={hideWrapper}></div>
       </div>
-    )
-  };
-};
-
-export default Chart;
+    );
+  }
+}
+export default TreeChart;

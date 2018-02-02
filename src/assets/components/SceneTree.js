@@ -35,7 +35,7 @@ const SceneTree =({
     onEditKnowledge,
     onFinshKnowledge,
     onCancelKnowledge,
-    
+
     form: {
         getFieldDecorator,
         validateFields,
@@ -109,7 +109,7 @@ const SceneTree =({
         },
         onDelKbDialog, // 删除节点
 	}
-	
+
 
     const classes = classNames({
         [styles.showMark]: kbid==null?true:false,
@@ -145,7 +145,7 @@ const SceneTree =({
                 <div style={{height:height}}>
                     <G6Component {...G6ComponentProps} />
                 </div>
-                
+
             </div>
 		</div>
 	)
