@@ -17,3 +17,59 @@
   height: 50px;
   line-height: 50px;
 }
+.boxWrap {
+  width: 50px;
+  text-align: center;
+  border: 1px solid #eeeeee;
+}
+.chartWrap {
+  border: none;
+  cursor: pointer;
+}
+.toolWrap {
+  position: absolute;
+  z-index: 1000;
+  top: 200px;
+  right: 50px;
+  .box {
+    .unselect();
+    .toolBtn {
+      .boxWrap;
+      height: 50px;
+      margin-top: 10px;
+      cursor: pointer;
+      &:hover {
+        border-color: #42a5f5;
+      }
+      transition: border-color 0.3s;
+      i {
+        display: inline-block;
+        width: 32px;
+        height: 32px;
+        line-height: 32px;
+        vertical-align: text-top;
+        background-position: center;
+        background-repeat: no-repeat;
+        background-size: cover;
+        color: #42a5f5;
+      }
+    }
+    .zoomContent {
+      .boxWrap;
+      padding: 10px 0;
+      color: #42a5f5;
+      i {
+        text-align: center;
+        font-size: 20px;
+        cursor: pointer;
+      }
+      p {
+        text-align: center;
+        font-size: 12px;
+      }
+      .zoomText {
+        margin: 10px 0;
+      }
+    }
+  }
+}

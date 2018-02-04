@@ -2,18 +2,18 @@ import React from 'react';
 import Chart from './chart';
 import styles from './index.less';
 const User = ({
-  treeData
+  baseData
 }) => {
   const chartProps = {
-    data: treeData,
+    data: baseData,
     height: 600,
     layoutCfg: {
       direction: "V",
       getHGap: () => {
-          return 20;
+          return 100;
       },
       getVGap: () => {
-          return 80;
+          return 110;
       }
     },
     grid: null,
