@@ -3,6 +3,7 @@ import G6 from '@antv/g6';
 import SideTool from './tool';
 import styles from './index.less';
 const Global = G6.Global;
+const Util = G6.Util;
 function generateUniqueId(isDeep) {
   return isDeep ? `rc-g6-1` : `rc-g6-0`;
 }
@@ -15,44 +16,79 @@ Global.nodeStyle = {
 };
 G6.registerNode('treeNode', {
   draw(cfg, group) {
+    const cfgx = cfg.x;
+    const cfgy = cfg.y;
     const model = cfg.model;
-    const width = `${model.treename}`.length * 18;
-    return group.addShape('rect', {
+    // console.log('model--->', model);
+    const backRect = group.addShape('rect', {
       attrs: {
-        x: 110,
-        y: 130,
-        zIndex: 10,
-        width: width > 100 ? width : 100,
-        fill: !model.circle ? '#42a5f5' : '#ffc53d',
-        height: !model.circle ? 30 : 50,
-        stroke: !model.circle ? '#42a5f5' : '#ffc53d'
+        stroke: '#979797',
+        fill: cfg.color
       }
     });
-    // return group.addShape('circle', {
-    //   attrs: {
-    //     x: 120,
-    //     y: 90,
-    //     r: 50,
-    //     zIndex: 10,
-    //     stroke: '#000'
-    //   }
-    // });
-  },
-  afterDraw(cfg, group, keyShape){
-    const model = cfg.model;
-    const points = {
-      x: model.circle ? cfg.x + 135 : cfg.x + 150,
-      y: model.circle ? cfg.y + 160 : cfg.y + 150,
+    const labelConfig = {
+      exist: model.treeInfo ? true : false,
+      line: model.treeInfo && model.treeInfo.line ? model.treeInfo.line : 0,
+      text: model.treeInfo && model.treeInfo.text ? model.treeInfo.text : '',
     };
-    group.addShape('text', {
+    const nameGroup = group.addGroup();
+    const lineHeight = 20;
+    const marginRight = 10;
+    const padding = 6;
+    const length = `${model.treename}`.length;
+    let fontHeight;
+    let anchorPoints = [];
+    let title;
+    let titleBox;
+    let nameBox;
+    let width;
+    let height;
+    title = group.addShape('text', {
       attrs: {
-        x: points.x,
-        y: points.y,
-        fill: !model.circle ? '#FFF' : '#222',
-        text: model.treename
+        x: cfgx,
+        y: cfgy,
+        text: model.treename,
+        fill: '#212121',
+        fontWeight: 700,
+        textBaseline: 'top',
+        textAlign: 'center'
       }
     });
-  },
+    nameGroup.addShape('text', {
+      attrs: {
+        x: cfgx + length * 5.5,
+        y: cfgy + 10,
+        text: labelConfig.text,
+        fill: '#212121',
+        textBaseline: 'top',
+        textAlign: 'left'
+      }
+    });
+
+    titleBox = title.getBBox();
+    nameBox = nameGroup.getBBox();
+    const maxwidth = titleBox.width > nameBox.width ? titleBox.width : nameBox.width;
+    width = maxwidth + 3 * marginRight + 2 * padding;
+    height = Math.max(nameBox.height) + 2 * padding + titleBox.height;
+    fontHeight = nameGroup.get('children')[0].getBBox().height;
+
+    title.translate(0, -height / 2 + padding);
+    nameGroup.translate(-width / 2 + padding, -height / 2 + titleBox.height + padding);
+    backRect.attr({
+      x: cfgx - width / 2,
+      y: cfgy - height / 2,
+      width: width,
+      height: height + (labelConfig.exist ? 10 : 0),
+      fill: cfg.color
+    });
+    const points = {
+      moreLine: (titleBox.height + labelConfig.line * (nameBox.height + lineHeight - fontHeight) / length + fontHeight / 2 + 3 * padding) / height,
+      oneLine: (titleBox.height + fontHeight / 2 + 3 * padding) / height,
+    };
+    anchorPoints.push([0, labelConfig.exist ? points.moreLine : points.oneLine ]);
+    group.set('anchorPoints', anchorPoints);
+    return backRect;
+  }
 });
 G6.registerEdge('treeEdge', {
   draw(cfg, group) {
@@ -64,7 +100,8 @@ G6.registerEdge('treeEdge', {
         ],
         zIndex: -1,
         stroke: '#222',
-        lineWidth: 1
+        lineWidth: 1,
+        arrow: true
       }
     });
   },
@@ -101,7 +138,7 @@ G6.registerEdge('treeEdge', {
       });
     }
   },
-});
+}, 'arrow');
 class Chart extends Component {
   constructor(props, context) {
     super(props);
@@ -133,7 +170,7 @@ class Chart extends Component {
   componentDidMount() {
     this.initTree(this.props);
   }
-  
+
   componentDidUpdate(newProps) {
     if (newProps !== this.props) {
       this.graph.destroy();
@@ -149,10 +186,7 @@ class Chart extends Component {
   initTree(props) {
     const graph = new G6.Tree({
       id: this.graphId,
-      fitView: {
-        x: 0,
-        y: 0
-      },
+      fitView: 'autoZoom',
       ...props
     });
     graph.tooltip(true);
@@ -165,26 +199,32 @@ class Chart extends Component {
         nodeInfo: data,
       };
     }).style(this.nodeStyle);
-    // graph.edge().shape('smooth');
-    graph.edge().shape('treeEdge');
-    graph.edge().label((data) => {
-      const allData = [this.graph.save().source];
-      const node = this.findNodeDataById(allData, data.target);
-      const text = node.treeInfo ? node.treeInfo.text : '';
-      if (text) {
-        return {
-          text: text,
-          layer: node.layer, // 自定义属性 位于第几层（unuse）
-          isFr: node.treeInfo.isFr, // 自定义属性 判断是否是法人
-          fill: 'green',
-          textAlign: 'left'
-          // rotate: this.angle(parent, node)
-        };
-      }
-    }).style({
+    console.log(graph.edge().shape('smooth').style());
+    graph.edge().shape('smooth').style({
+      arrow: true,
       lineWidth: 1,
-      stroke: '#222'
+      full: '#979797'
     });
+    // graph.edge().shape('treeEdge');
+    console.log('edge---->', graph.edge());
+    // graph.edge().label((data) => {
+    //   const allData = [this.graph.save().source];
+    //   const node = this.findNodeDataById(allData, data.target);
+    //   const text = node.treeInfo ? node.treeInfo.text : '';
+    //   if (text) {
+    //     return {
+    //       text: text,
+    //       layer: node.layer, // 自定义属性 位于第几层（unuse）
+    //       isFr: node.treeInfo.isFr, // 自定义属性 判断是否是法人
+    //       fill: 'green',
+    //       textAlign: 'left'
+    //       // rotate: this.angle(parent, node)
+    //     };
+    //   }
+    // }).style({
+    //   lineWidth: 1,
+    //   stroke: '#222'
+    // });
     graph.edge().tooltip((data) => {
       const allData = [this.graph.save().source];
       const node = this.findNodeDataById(allData, data.target);
@@ -281,11 +321,11 @@ class Chart extends Component {
     if (scale > 10) {
       scale = 10;
     }
-    if (zoom === 'add' && scale > 0 && scale < 10) {
-      scale = Math.round(parseFloat(scale + 1) * 100) / 100;
+    if (zoom === 'add' && scale >= 0 && scale < 10) {
+      scale = Math.round(parseFloat(scale + 0.5) * 100) / 100;
     }
-    if (zoom === 'sub' && scale < 10 && scale > 0 ) {
-      scale = Math.round(parseFloat(scale - 1) * 100) / 100;
+    if (zoom === 'sub' && scale <= 10 && scale > 0 ) {
+      scale = Math.round(parseFloat(scale - 0.5) * 100) / 100;
     }
     this.zoom(scale);
     this.setState({

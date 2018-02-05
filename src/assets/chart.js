@@ -1,8 +1,7 @@
-import React, { Component, PropTypes } from 'react';
+import React, { Component } from 'react';
 import G6 from '@antv/g6';
 import SideTool from './tool';
 import styles from './index.less';
-
 const Global = G6.Global;
 function generateUniqueId(isDeep) {
   return isDeep ? `rc-g6-1` : `rc-g6-0`;
@@ -15,25 +14,138 @@ Global.nodeStyle = {
   fillOpacity: 0.10
 };
 
+G6.registerNode('treeNode', {
+  draw(cfg, group) {
+    const cfgx = cfg.x;
+    const cfgy = cfg.y;
+    const model = cfg.model;
+    const backRect = group.addShape('rect', {
+      attrs: {
+        stroke: '#979797',
+        fill: cfg.color
+      }
+    });
+    const labelConfig = {
+      exist: model.treeInfo ? true : false,
+      line: model.treeInfo && model.treeInfo.line ? model.treeInfo.line : 0,
+      text: model.treeInfo && model.treeInfo.text ? model.treeInfo.text : '',
+    };
+    const nameGroup = group.addGroup();
+    const lineHeight = 20;
+    const marginRight = 10;
+    const padding = 6;
+    const length = `${model.treename}`.length;
+    let fontHeight;
+    let anchorPoints = [];
+    let title;
+    let titleBox;
+    let nameBox;
+    let width;
+    let height;
+    title = group.addShape('text', {
+      attrs: {
+        x: cfgx,
+        y: cfgy,
+        text: model.treename,
+        fill: '#212121',
+        fontWeight: 700,
+        textBaseline: 'top',
+        textAlign: 'center'
+      }
+    });
+    nameGroup.addShape('text', {
+      attrs: {
+        x: cfgx,
+        y: cfgy + 10,
+        text: labelConfig.text,
+        fill: '#212121',
+        textBaseline: 'top'
+      }
+    });
+
+    titleBox = title.getBBox();
+    nameBox = nameGroup.getBBox();
+    const maxwidth = titleBox.width > nameBox.width ? titleBox.width : nameBox.width;
+    width = maxwidth + 3 * marginRight + 2 * padding;
+    height = Math.max(nameBox.height) + 2 * padding + titleBox.height;
+    fontHeight = nameGroup.get('children')[0].getBBox().height;
+
+    title.translate(0, -height / 2 + padding);
+    nameGroup.translate(-width / 2 + padding, -height / 2 + titleBox.height + padding);
+    backRect.attr({
+      x: cfgx - width / 2,
+      y: cfgy - height / 2,
+      width: width,
+      height: height + (labelConfig.exist ? 10 : 0),
+      fill: cfg.color
+    });
+    const points = {
+      moreLine: (titleBox.height + labelConfig.line * (nameBox.height + lineHeight - fontHeight) / length + fontHeight / 2 + 3 * padding) / height,
+      oneLine: (titleBox.height + fontHeight / 2 + 3 * padding) / height,
+    };
+    anchorPoints.push([0, labelConfig.exist ? points.moreLine : points.oneLine]);
+    group.set('anchorPoints', anchorPoints);
+    return backRect;
+  }
+});
 G6.registerEdge('treeEdge', {
   draw(cfg, group) {
+    // return group.addShape('polyline', {
+    //   attrs: {
+    //     points: [
+    //       [cfg.points[0].x, cfg.points[0].y],
+    //       [cfg.points[1].x, cfg.points[1].y]
+    //     ],
+    //     zIndex: -1,
+    //     stroke: '#222',
+    //     lineWidth: 1
+    //   }
+    // });
+    // 三阶贝赛尔曲线
+    const node = {
+      x: (cfg.points[0].x + cfg.points[1].x) / 4,
+      y: (cfg.points[0].y + cfg.points[1].y) / 4
+    };
+    console.log(cfg.points);
+    // 获取首个4/1点
+    const cubic = {
+      p1: [cfg.points[0].x, cfg.points[0].y],
+      p2: [node.x, node.y],
+      p3: [node.x, node.y],
+      p4: [cfg.points[1].x, cfg.points[1].y],
+    };
+    return group.addShape('cubic', {
+      attrs: {
+        p1: cubic.p1,
+        p2: cubic.p2,
+        p3: cubic.p3,
+        p4: cubic.p4,
+        zIndex: -1,
+        stroke: '#222',
+        lineWidth: 1
+      }
+    });
+  },
+  afterDraw(cfg, group) {
     if (cfg.label) {
-      console.log('text------>', cfg.label.text);
-      console.log(cfg.points[0], cfg.points[1]);
+      const isFr = cfg.label.isFr;
       const node = {
-        x: (cfg.points[0].x + cfg.points[1].x) / 2,
+        x: (cfg.points[0].x + cfg.points[1].x) / 2 - 30,
         y: (cfg.points[0].y + cfg.points[1].y) / 2
       };
-      // const handlePosition = (points) => {
-      //   const one = points[0];
-      //   const two = points[1];
-        // if (one) {
-
-        // }
-      // };
-      console.log('node------>', node);
-      console.log('<------------------------------------->');
-      // handlePosition(cfg.label.layer);
+      if (!isFr) {
+        node.y -= 20;
+      }
+      group.addShape('rect', {
+        attrs: {
+          x: node.x - 10,
+          y: node.y - 5,
+          width: 100,
+          height: cfg.label.isFr ? 26 : 50,
+          stroke: 'black',
+          fill: '#FFF'
+        }
+      });
       group.addShape('text', {
         attrs: {
           x: node.x,
@@ -41,32 +153,14 @@ G6.registerEdge('treeEdge', {
           fill: 'green',
           lineWidth: 100,
           text: cfg.label.text,
-          textAlign: 'center',
+          textAlign: 'left',
           textBaseline: 'top'
         }
       });
     }
-    return group.addShape('polyline', {
-      attrs: {
-        points: [
-          [cfg.points[0].x, cfg.points[0].y],
-          [cfg.points[1].x, cfg.points[1].y]
-        ],
-        stroke: '#222',
-        lineWidth: cfg.size
-      }
-    });
-  }
+  },
 });
-class TreeChart extends Component {
-  static propTypes = {
-    data: PropTypes.object,
-    height: PropTypes.number,
-    fitViewPadding: PropTypes.number,
-    layoutCfg: PropTypes.object,
-    grid: PropTypes.object,
-    saveData: PropTypes.func
-  }
+class Chart extends Component {
   constructor(props) {
     super(props);
     this.state = {
@@ -84,13 +178,8 @@ class TreeChart extends Component {
     this.deepGraph = null; // 用作下载
     this.deepGraphContainer = null;
 
-    this.mouseEnterNodeStyle = {
-      lineWidth: 2,
-      stroke: '#FF0',
-    };
-
     this.nodeStyle = {
-      lineWidth: 1,
+      lineWidth: 1
     };
   }
 
@@ -106,39 +195,41 @@ class TreeChart extends Component {
   }
   // 跳转页面
   onNodeClick = (node) => {
-    console.log(node);
+    const { item, itemType } = node;
+    if (item && item._attrs && itemType === 'node') {
+      console.log(node);
+    }
   }
+
   // 初始化Tree
   initTree(props) {
     const graph = new G6.Tree({
       id: this.graphId,
-      fitView: {
-        x: 0,
-        y: 0
-      },
-      // plugins: [ miniMap ],
+      fitView: 'autoZoom',
       ...props
     });
     graph.tooltip(true);
     this.graphContainer = graph.get('graphContainer');
     graph.addBehaviour('default', ['clickBlankClearActive']);
-    graph.node().label('treename').style(this.nodeStyle);
-    // graph.edge().shape('smooth');
+    graph.node().shape('treeNode');
+    graph.node().label((data) => {
+      return {
+        text: data.treename,
+        nodeInfo: data,
+      };
+    }).style(this.nodeStyle);
     graph.edge().shape('treeEdge');
     graph.edge().label((data) => {
       const allData = [this.graph.save().source];
-      // const parent = this.findNodeDataById(allData, data.source);
       const node = this.findNodeDataById(allData, data.target);
-      // console.log('node--->', node);
       const text = node.treeInfo ? node.treeInfo.text : '';
       if (text) {
         return {
           text: text,
-          layer: node.layer,
+          layer: node.layer, // 自定义属性 位于第几层（unuse）
+          isFr: node.treeInfo.isFr, // 自定义属性 判断是否是法人
           fill: 'green',
-          textAlign: 'left',
-          translate: [node.x - 100, node.y]
-          // rotate: this.angle(parent, node)
+          textAlign: 'left'
         };
       }
     }).style({
@@ -155,12 +246,11 @@ class TreeChart extends Component {
         ['简要信息', obj.treename]
       ];
     });
-    graph.source(this.props.data);
+    graph.source(props.data);
     this.graph = graph;
     this.graph.render();
     this.graph.on('click', this.onNodeClick);
   }
-
   createDeepTree = (props) => {
     const deepGraph = new G6.Tree({
       id: this.deepGraphId,
@@ -172,30 +262,40 @@ class TreeChart extends Component {
       height: 1000
     });
     this.deepGraphContainer = deepGraph.get('graphContainer');
-    deepGraph.node().label('treename').style(this.nodeStyle);
+    deepGraph.node().shape('treeNode');
+    deepGraph.node().label((data) => {
+      return {
+        text: data.treename,
+        nodeInfo: data,
+      };
+    }).style(this.nodeStyle);
     // deepGraph.edge().shape('smooth');
+    deepGraph.edge().shape('treeEdge');
+
     deepGraph.edge().label((data) => {
       const allData = [this.deepGraph.save().source];
-      // const parent = this.findNodeDataById(allData, data.source);
       const node = this.findNodeDataById(allData, data.target);
       const text = node.treeInfo ? node.treeInfo.text : '';
-      return {
-        text: text,
-        // lineWidth: node.treename.length * 2,
-        fill: 'green',
-        textAlign: 'left'
-        // rotate: this.angle(parent, node)
-      };
+      if (text) {
+        return {
+          text: text,
+          layer: node.layer, // 自定义属性 位于第几层（unuse）
+          isFr: node.treeInfo.isFr, // 自定义属性 判断是否是法人
+          fill: 'green',
+          textAlign: 'left'
+          // rotate: this.angle(parent, node)
+        };
+      }
     }).style({
-      lineWidth: 5,
-      stroke: 'green'
+      lineWidth: 1,
+      stroke: '#222'
     });
     deepGraph.edge().color((data) => {
       const allData = [this.deepGraph.save().source];
       const node = this.findNodeDataById(allData, data.target);
       return [['路径标识', node.treename]];
     });
-    deepGraph.source(this.props.data);
+    deepGraph.source(props.data);
     this.deepGraph = deepGraph;
     this.deepGraph.render();
   }
@@ -232,11 +332,11 @@ class TreeChart extends Component {
     if (scale > 10) {
       scale = 10;
     }
-    if (zoom === 'add' && scale > 0 && scale < 10) {
-      scale = Math.round(parseFloat(scale + 1) * 100) / 100;
+    if (zoom === 'add' && scale >= 0 && scale < 10) {
+      scale = Math.round(parseFloat(scale + 0.5) * 100) / 100;
     }
-    if (zoom === 'sub' && scale < 10 && scale > 0 ) {
-      scale = Math.round(parseFloat(scale - 1) * 100) / 100;
+    if (zoom === 'sub' && scale <= 10 && scale > 0) {
+      scale = Math.round(parseFloat(scale - 0.5) * 100) / 100;
     }
     this.zoom(scale);
     this.setState({
@@ -280,6 +380,7 @@ class TreeChart extends Component {
     const diffY = end.y - start.y;
     return 360 * Math.atan(diffY / diffX) / (2 * Math.PI);
   }
+
   render() {
     const self = this;
     const { ratio } = this.state;
@@ -305,9 +406,10 @@ class TreeChart extends Component {
       <div>
         <SideTool {...sideToolProps} />
         <div id={this.graphId} className={styles.chartWrap}></div>
-        <div id={this.deepGraphId} style={{ display: 'none'}}></div>
+        <div id={this.deepGraphId} style={{ display: 'none' }}></div>
       </div>
     );
   }
 }
-export default TreeChart;
+
+export default Chart;

@@ -10,10 +10,10 @@ const User = ({
     layoutCfg: {
       direction: "V",
       getHGap: () => {
-          return 100;
+          return 50;
       },
       getVGap: () => {
-          return 110;
+          return 80;
       }
     },
     grid: null,

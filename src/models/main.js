@@ -299,7 +299,7 @@ export default {
         const structureMapping = (data) => {
           const mapInfo = {
             companyName: data.companyName ? data.companyName : '--', // 企业名称
-            frname: data.frName ? `法人代表\n${data.frName}` : '--', // 华人代表
+            frname: data.frName ? `法人代表(${data.frName})` : '--', // 华人代表
             entinvList: data.entinvItemList && data.entinvItemList.length > 0 ? data.entinvItemList : false, // 企业对外投资
             shareList: data.shareHolderList && data.shareHolderList.length > 0 ? data.shareHolderList : false, // 股东
             frinvList: data.frinvList && data.frinvList.length > 0 ? data.frinvList : false, // 法人对外投资
@@ -307,7 +307,7 @@ export default {
           };
           const frInfo = {
             treename: mapInfo.frname,
-            layer: 1,
+            color: '#E5E5E5',
             circle: true, // 人名为圆形
             children: []
           };
@@ -321,14 +321,18 @@ export default {
             const output = {};
             const temp = {};
             output.isFr = isFr;
+            output.line = isFr ? 1 : 2;
             if (isFr) {
               output.text = '担任法人';
               return output;
             }
+            const modifyNumber = (value, unit = '万元') => {
+              return isNaN(Number(value)) || Number(value).toFixed(2) === '0.00' ? '--' : Number(value).toFixed(2) + unit;
+            };
             temp.date = itemData.conDate ? itemData.conDate : '--';
-            temp.invest = itemData.subConam ? itemData.subConam : '--';
+            temp.invest = itemData.subConam ? modifyNumber(itemData.subConam) : '--';
             temp.ratio = itemData.fundedRatio ? itemData.fundedRatio : '--';
-            output.text = `${config.date}: ${temp.date}\n${config.invest}: ${temp.invest}\n${config.ratio}: ${temp.ratio}\n`;
+            output.text = `${config.invest}${temp.invest}(${config.ratio}: ${temp.ratio})\n${config.date}: ${temp.date}`;
             return output;
           };
           // 获取股东数据
@@ -337,7 +341,7 @@ export default {
               item.treename = item[keys];
               item.treeInfo = handleLabel(item);
               item.treeKey = keys;
-              item.layer = 1;
+              item.color = '#FFFFFF';
               item.circle = circle;
               baseData.children.push(item);
             });
@@ -345,10 +349,10 @@ export default {
           // 获取法人信息
           const modifyFrData = (arrData, keys, isFr, circle = false) => {
             arrData.map((item) => {
-              item.treename = item[keys];
+              item.treename = `${item[keys]}${item[keys]}`;
               item.treeInfo = handleLabel(item, isFr);
               item.treeKey = keys;
-              item.layer = 2;
+              item.color = '#FFFFFF';
               item.circle = circle;
               frInfo.children.push(item);
             });
@@ -360,12 +364,12 @@ export default {
           if (mapInfo.frPositionList) {
             modifyFrData(mapInfo.frPositionList, 'entName', true);
           }
-      
+
           // 存入数据
           baseData.id = 'root';
           baseData.treename = mapInfo.companyName;
           baseData.circle = false;
-          baseData.layer = 0;
+          baseData.color = '#E5E5E5';
           baseData.children = [];
           baseData.children.push(frInfo);
           // 股东数据
