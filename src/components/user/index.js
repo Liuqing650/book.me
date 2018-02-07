@@ -2,11 +2,14 @@ import React from 'react';
 import Chart from './chart';
 import styles from './index.less';
 const User = ({
-  baseData
+  baseData,
+  dataLength
 }) => {
   const chartProps = {
     data: baseData,
+    dataLength: dataLength,
     height: 600,
+    fitViewPadding: 30,
     layoutCfg: {
       direction: "V",
       getHGap: () => {

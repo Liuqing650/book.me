@@ -8,6 +8,7 @@ export default {
       loginTabsIndex: '1',
       selectedMenu: 'user',
       loading: false,
+      dataLength: 0,
       book: {
         id: '',
         content: null,
@@ -299,16 +300,17 @@ export default {
         const structureMapping = (data) => {
           const mapInfo = {
             companyName: data.companyName ? data.companyName : '--', // 企业名称
-            frname: data.frName ? `法人代表(${data.frName})` : '--', // 华人代表
+            frname: data.frName ? `${data.frName}(法人代表)` : '--', // 华人代表
             entinvList: data.entinvItemList && data.entinvItemList.length > 0 ? data.entinvItemList : false, // 企业对外投资
             shareList: data.shareHolderList && data.shareHolderList.length > 0 ? data.shareHolderList : false, // 股东
             frinvList: data.frinvList && data.frinvList.length > 0 ? data.frinvList : false, // 法人对外投资
             frPositionList: data.frPositionList && data.frPositionList.length > 0 ? data.frPositionList : false, // 法人在外任职
           };
-          const frInfo = {
+          let frInfo = {
             treename: mapInfo.frname,
             color: '#E5E5E5',
-            circle: true, // 人名为圆形
+            dataType: 2, // 数据类型： 公司为1， 人名为2
+            arrow: 'none', // 箭头函数: {none: 无箭头, syntropy: 同向箭头, reverse: 反向箭头}
             children: []
           };
           const config = {
@@ -335,52 +337,79 @@ export default {
             output.text = `${config.invest}${temp.invest}(${config.ratio}: ${temp.ratio})\n${config.date}: ${temp.date}`;
             return output;
           };
+          /**
+           * 检验公司名称
+           * @param {*String} query 待测字符串
+           * @param {*Number} minLen 最小长度
+           * @return true | false
+           */
+          const checkCompanyName = (query, minLen = 6) => {
+            if (!query) {
+              return false;
+            }
+            const length = `${query}`.length;
+            const cond0 = Boolean(length < minLen); // 字符串长度 < minLen
+            const cond1 = !Boolean(/[^a-zA-Z]/.test(query)); // 全英文
+            const cond2 = Boolean(`${query.replace(/[^0-9]+/g, '')}`.length >= length * 0.6); // 数字占比 >= 0.6;
+            const cond3 = Boolean(/[~!@#$%\^&\*\-_=+<>,;:、。?/\\|～＠＃￥％＾＆＊＿＝＋＜＞，．。；：？／＼｜]/.test(query)); // 包含特殊字符
+            const cond4 = Boolean(query.match(/[\(（]?\d{1,2}[\.\)）\u2E80-\u9FFF\s]/)); // 数字在前面的错误情况
+            const cond5 = Boolean(query.match(/[\u2E80-\u9FFF]+[\da-zA-Z]?[\d]$/)); // 数字在最后的错误情况
+            return !(cond0 || cond1 || cond2 || cond3 || cond4 || cond5);
+          };
           // 获取股东数据
-          const getShareData = (arrData, keys, circle = false) => {
+          const getShareData = (arrData, keys, dataType = 1, arrow = 'syntropy') => {
             arrData.map((item) => {
+              let type = dataType;
+              if (dataType === 2 && checkCompanyName(item[keys])) {
+                --type;
+              }
               item.treename = item[keys];
               item.treeInfo = handleLabel(item);
               item.treeKey = keys;
               item.color = '#FFFFFF';
-              item.circle = circle;
+              item.dataType = type;
+              item.arrow = arrow;
               baseData.children.push(item);
             });
           };
           // 获取法人信息
-          const modifyFrData = (arrData, keys, isFr, circle = false) => {
+          const modifyFrData = (arrData, keys, isFr, dataType = 1, arrow = 'syntropy') => {
             arrData.map((item) => {
               item.treename = `${item[keys]}${item[keys]}`;
               item.treeInfo = handleLabel(item, isFr);
               item.treeKey = keys;
               item.color = '#FFFFFF';
-              item.circle = circle;
+              item.dataType = dataType;
+              item.arrow = arrow;
               frInfo.children.push(item);
             });
           };
           // 获取法人信息
           if (mapInfo.frinvList) {
-            modifyFrData(mapInfo.frinvList, 'entName');
+            modifyFrData(mapInfo.frinvList, 'entName', 1, 'syntropy');
           }
           if (mapInfo.frPositionList) {
-            modifyFrData(mapInfo.frPositionList, 'entName', true);
+            modifyFrData(mapInfo.frPositionList, 'entName', 1, 'syntropy');
           }
 
           // 存入数据
           baseData.id = 'root';
           baseData.treename = mapInfo.companyName;
-          baseData.circle = false;
+          baseData.dataType = 1;
+          baseData.arrow = 'none';
           baseData.color = '#E5E5E5';
           baseData.children = [];
           baseData.children.push(frInfo);
           // 股东数据
           if (mapInfo.shareList) {
-            getShareData(mapInfo.shareList, 'shareholderName', true);
+            getShareData(mapInfo.shareList, 'shareholderName', 2, 'syntropy');
           }
           if (mapInfo.entinvList) {
-            getShareData(mapInfo.entinvList, 'entName');
+            getShareData(mapInfo.entinvList, 'entName', 1, 'syntropy');
           }
+          state.dataLength = Math.round(baseData.children.length / 2) + frInfo.children.length;
         }
-        structureMapping(Object.assign({}, state.mockData));
+        structureMapping(Object.assign({}, state.mockData));    
         state.baseData = baseData;
         console.log(baseData);
         return { ...state };
