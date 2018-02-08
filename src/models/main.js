@@ -356,40 +356,41 @@ export default {
             const cond5 = Boolean(query.match(/[\u2E80-\u9FFF]+[\da-zA-Z]?[\d]$/)); // 数字在最后的错误情况
             return !(cond0 || cond1 || cond2 || cond3 || cond4 || cond5);
           };
-          // 获取股东数据
-          const getShareData = (arrData, keys, dataType = 1, arrow = 'syntropy') => {
+
+          /**
+           * 获取股东数据
+           * @param {*Array} arrData 数据源
+           * @param {*String} keys 取值键
+           * @param {*Number} status 数据存入： baseData为1， frInfo为2
+           * @param {*Boolean} isFr 是否为法人： true | false
+           * @param {*Number} dataType 数据类型： 公司为1， 人名为2
+           * @param {*String} arrow 箭头函数: {none: 无箭头, syntropy: 同向箭头, reverse: 反向箭头}
+           */
+          const handleData = (arrData, keys, status = 1, isFr = false, dataType = 1, arrow = 'syntropy') => {
             arrData.map((item) => {
               let type = dataType;
               if (dataType === 2 && checkCompanyName(item[keys])) {
                 --type;
               }
               item.treename = item[keys];
-              item.treeInfo = handleLabel(item);
+              item.treeInfo = handleLabel(item, isFr);
               item.treeKey = keys;
               item.color = '#FFFFFF';
               item.dataType = type;
               item.arrow = arrow;
-              baseData.children.push(item);
+              if (status === 1) {
+                baseData.children.push(item);
+              } else {
+                frInfo.children.push(item);
+              }
             });
           };
           // 获取法人信息
-          const modifyFrData = (arrData, keys, isFr, dataType = 1, arrow = 'syntropy') => {
-            arrData.map((item) => {
-              item.treename = `${item[keys]}${item[keys]}`;
-              item.treeInfo = handleLabel(item, isFr);
-              item.treeKey = keys;
-              item.color = '#FFFFFF';
-              item.dataType = dataType;
-              item.arrow = arrow;
-              frInfo.children.push(item);
-            });
-          };
-          // 获取法人信息
-          if (mapInfo.frinvList) {
-            modifyFrData(mapInfo.frinvList, 'entName', 1, 'syntropy');
+          if (mapInfo.frinvList) { // 法人对外投资
+            handleData(mapInfo.frinvList, 'entName', 2, false, 1, 'syntropy');
           }
-          if (mapInfo.frPositionList) {
-            modifyFrData(mapInfo.frPositionList, 'entName', 1, 'syntropy');
+          if (mapInfo.frPositionList) { // 法人在外任职
+            handleData(mapInfo.frPositionList, 'entName', 2, true, 1, 'syntropy');
           }
 
           // 存入数据
@@ -401,15 +402,15 @@ export default {
           baseData.children = [];
           baseData.children.push(frInfo);
           // 股东数据
-          if (mapInfo.shareList) {
-            getShareData(mapInfo.shareList, 'shareholderName', 2, 'syntropy');
+          if (mapInfo.entinvList) { // 企业对外投资
+            handleData(mapInfo.entinvList, 'entName', 1, false, 1, 'syntropy');
           }
-          if (mapInfo.entinvList) {
-            getShareData(mapInfo.entinvList, 'entName', 1, 'syntropy');
+          if (mapInfo.shareList) { // 股东
+            handleData(mapInfo.shareList, 'shareholderName', 1, false, 2, 'reverse');
           }
           state.dataLength = Math.round(baseData.children.length / 2) + frInfo.children.length;
         }
-        structureMapping(Object.assign({}, state.mockData));    
+        structureMapping(Object.assign({}, state.mockData));
         state.baseData = baseData;
         console.log(baseData);
         return { ...state };

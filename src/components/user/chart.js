@@ -1,4 +1,5 @@
-import React, { Component } from 'react';
+import React, { Component, PropTypes } from 'react';
+
 import G6 from '@antv/g6';
 import SideTool from './tool';
 import styles from './index.less';
@@ -7,6 +8,7 @@ const Util = G6.Util;
 function generateUniqueId(isDeep) {
   return isDeep ? `rc-g6-1` : `rc-g6-0`;
 }
+// 设置全局节点样式
 Global.nodeStyle = {
   stroke: '#222',
   fill: '#fff',
@@ -14,6 +16,7 @@ Global.nodeStyle = {
   radius: 0,
   fillOpacity: 0.10
 };
+
 G6.registerNode('treeNode', {
   draw(cfg, group) {
     const cfgx = cfg.x;
@@ -99,26 +102,26 @@ G6.registerEdge('treeEdge', {
     const center = keyShape.getPoint(0.5);
     const before = keyShape.getPoint(0.6);
     let lineWidth = keyShape.attr('lineWidth');
-    if(lineWidth < 20){
+    if (lineWidth < 20) {
       lineWidth = 20;
     }
     const pointsConfig = {
       none: [],
       reverse: [
-        [lineWidth/4, lineWidth/4],
-        [-lineWidth/4, 0],
-        [lineWidth/4, -lineWidth/4]
+        [lineWidth / 4, lineWidth / 4],
+        [-lineWidth / 4, 0],
+        [lineWidth / 4, -lineWidth / 4]
       ],
       syntropy: [
-        [-lineWidth/4, lineWidth/4],
-        [lineWidth/4, 0],
-        [-lineWidth/4, -lineWidth/4]
+        [-lineWidth / 4, lineWidth / 4],
+        [lineWidth / 4, 0],
+        [-lineWidth / 4, -lineWidth / 4]
       ]
     };
     const arrowPoints = pointsConfig[model.arrow];
     // 关于自身坐标系构造一个形，作为箭头
     const arrow = group.addShape('polyline', {
-      attrs:{
+      attrs: {
         points: arrowPoints,
         stroke: '#979797'
       },
@@ -128,15 +131,20 @@ G6.registerEdge('treeEdge', {
   }
 }, 'smooth');
 class Chart extends Component {
-  constructor(props, context) {
+  static propTypes = {
+    dataLength: PropTypes.number,
+  }
+
+  constructor(props) {
     super(props);
     this.state = {
       node: {},
-      downloadLoading: false,
+      downloadStatus: 'download', // download | loading | error
       url: '',
-      ratio: 1,
-      zoomScale: 1, // 初始缩放比例,
-    }
+      ratio: 0.1,
+      zoomScale: 0.1, // 初始缩放比例,
+      percent: 0,
+    };
     // id生成函数
     this.graphId = generateUniqueId();
     this.graph = null;
@@ -157,7 +165,9 @@ class Chart extends Component {
 
   componentDidUpdate(newProps) {
     if (newProps !== this.props) {
-      this.graph.destroy();
+      if (this.graph) {
+        this.graph.destroy();
+      }
       this.initTree(this.props);
     }
   }
@@ -170,29 +180,48 @@ class Chart extends Component {
    * 5. 光标滚动事件 onMouseWheel
    * 6. 图片下载按钮事件 download
    */
+  onLeftClick = (node) => {
+    const scale = this.graph.getScale();
+    // const model = node.item._attrs.model;
+    const model = node;
+    console.log('model------->', model);
+    this.position = { x: model.x, y: model.y };
+    // this.graph.focusPoint(this.position);
+    // const matrix = new G6.Matrix.Matrix3();
+    // const matrix2 = new G6.Matrix.Matrix3();
+    // console.log('matrix->', matrix);
+    // console.log('matrix2->', matrix2);
+    // const to2 = matrix.to2DObject();
+    // const to3 = matrix.from2DObject(to2);
+    // console.log('三阶矩阵 => 二阶矩阵', to2);
+    // console.log('二阶矩阵 => 三阶矩阵', to3.elements);
+    // console.log('三阶矩阵移动->', matrix.multiplyScalar(scale));
+    // console.log('三阶矩阵反转->', matrix.inverse());
+    // console.log('三阶矩阵平移->', matrix.translate(12, 10).elements);
+    // console.log('三阶矩阵乘法->', matrix.translate(12, 10).elements);
+  }
   onNodeClick = (node) => {
-    Tooltip.remove();
     const { item, itemType, domEvent } = node;
     console.log('node---->', node);
     console.log('item---->', item);
-    if (item && item._attrs && itemType === 'node') {
-      const { model } = item._attrs;
-      domEvent.preventDefault();
-      if (model.dataType === 1) {
-        Tooltip.show({
-          pageX: domEvent.pageX,
-          pageY: domEvent.pageY,
-          component: (
-            <LinkModule
-              exclude={model.root ? ['report'] : []}
-              companyName={model.treename}
-              linkType="open"
-              mode="vertical"
-              cbFunc={Tooltip.remove} />
-          ),
-        });
-      }
-    }
+    // if (item && item._attrs && itemType === 'node') {
+    //   const { model } = item._attrs;
+    //   domEvent.preventDefault();
+    //   if (model.dataType === 1) {
+    //     Tooltip.show({
+    //       pageX: domEvent.pageX,
+    //       pageY: domEvent.pageY,
+    //       component: (
+    //         <LinkModule
+    //           exclude={model.root ? ['report'] : []}
+    //           companyName={model.treename}
+    //           linkType="open"
+    //           mode="vertical"
+    //           cbFunc={Tooltip.remove} />
+    //       ),
+    //     });
+    //   }
+    // }
   }
   onMouseEnter = (even) => {
     if (even.itemType !== 'node') {
@@ -213,17 +242,32 @@ class Chart extends Component {
     element.style.cursor = 'move';
   }
   onMouseWheel = (event, isFirefox) => {
-    const { zoomScale } = this.state.zoomScale;
     const scale = this.graph.getScale();
-    if (!isFirefox && zoomScale !== scale) {
-      const handleScale = Math.round(parseFloat(scale + 0.2) * 100) / 100;
+    console.log('event------->', event);
+    console.log('this.graph------->', this.graph);
+
+    const matrix = new G6.Matrix.Matrix3();
+    // 三阶矩阵主要用于放大缩小，平移等，
+    const copymatrix = matrix.copy(matrix);
+    const copymatrix2 = matrix.copy(matrix);
+    console.log('copymatrix->', copymatrix);
+    const to2 = copymatrix.to2DObject();
+    const to3 = copymatrix.from2DObject(to2);
+    console.log('二阶矩阵', to2);
+    console.log('三阶矩阵', to3);
+    console.log('三阶矩阵乘法->', copymatrix.multiplyScalar(scale));
+    console.log('三阶矩阵缩放->', copymatrix2.scale(scale, scale));
+
+
+    if (!isFirefox) {
+      const handleScale = Math.round(parseFloat(scale) * 100) / 100;
       this.setState({
-        ratio: handleScale
+        ratio: this.checkNum(handleScale)
       });
     } else { // 处理火狐浏览器
       const delta = Math.max(-1, Math.min(1, (event.wheelDelta || -event.detail)));
       const zoom = delta > 0 ? 'add' : 'sub';
-      this.focus(scale, zoom);
+      this.focus(zoom);
     }
   }
   download = () => {
@@ -235,15 +279,18 @@ class Chart extends Component {
     }
     // 分析放大倍数
     const { dataLength } = this.props;
+    this.checkDownload(dataLength, 80, true);
     console.log('dataLength------>', dataLength);
-    const zoomScale = dataLength >= 100 ? 0.223 : 0.6 - (2 / (10 - dataLength / 10));
-    const zoom = dataLength > 10 ? Math.round(parseFloat(dataLength * zoomScale) * 100) / 100 : 3;
-    this.createDeepTree(this.props, zoom);
-    this.graph.autoZoom(); // 可视图层缩放到适应屏幕
-    const saveName = this.findRootInfo('treename');
-    setTimeout(() => {
-      this.downloadImage(saveName ? saveName : '');
-    }, zoom > 3 ? zoom * 500 : 300);
+    if (dataLength <= 80) {
+      const zoomScale = dataLength >= 80 ? 0.223 : 0.6 - (2 / (10 - dataLength / 10));
+      const zoom = dataLength > 10 ? Math.round(parseFloat(dataLength * zoomScale) * 100) / 100 : 3;
+      this.createDeepTree(this.props, 10, dataLength);
+      // this.graph.autoZoom(); // 可视图层缩放到适应屏幕
+      const saveName = this.findRootInfo('treename');
+      setTimeout(() => {
+        this.downloadImage(saveName ? saveName : '');
+      }, zoom > 3 ? zoom * 500 : 300);
+    }
   };
   /**
    * 初始化图形
@@ -270,22 +317,7 @@ class Chart extends Component {
         nodeInfo: data,
       };
     }).style(this.nodeStyle);
-    // graph.edge().shape('smoothArrow').style({
-    //   arrow: true,
-    //   lineWidth: 1,
-    //   full: '#979797'
-    // });
-    // graph.edge().shape('smooth').style( model => {
-    //   const allData = [this.graph.save().source];
-    //   const node = this.findNodeDataById(allData, model.source);
-    //   const style = {
-    //     arrow: node.dataType === 1,
-    //     lineWidth: 1,
-    //     full: '#979797'
-    //   }
-    //   return style;
-    // });
-    graph.edge().shape('treeEdge')
+    graph.edge().shape('treeEdge');
     graph.edge().tooltip((data) => {
       const allData = [this.graph.save().source];
       const node = this.findNodeDataById(allData, data.target);
@@ -299,11 +331,9 @@ class Chart extends Component {
     graph.source(props.data);
     this.graph = graph;
     this.graph.render();
-    this.setState({
-      zoomScale: this.graph.getScale()
-    });
+    console.log(this.graph.getScale());
     this.graph.on('contextmenu', this.onNodeClick);
-    // this.graph.on('click', this.onLeftClick);
+    this.graph.on('click', this.onLeftClick);
     this.graph.on('itemmouseenter', this.onMouseEnter);
     this.graph.on('itemmouseleave', this.onMouseLever);
     this.graph.on('mousewheel', this.onMouseWheel);
@@ -312,14 +342,15 @@ class Chart extends Component {
         this.onMouseWheel(event, true);
       });
     }
-    this.focus(1, 'add');
+    this.checkDownload(this.props.dataLength, 80);
   }
-  createDeepTree = (props, zoom) => {
+  createDeepTree = (props, zoom, dataLength) => {
+    const width = dataLength * 300;
     const deepGraph = new G6.Tree({
       id: this.deepGraphId,
       fitView: 'autoZoom',
       ...props,
-      width: 1000 * zoom,
+      width: width,
       height: props.height
     });
     deepGraph.node().shape('treeNode');
@@ -336,50 +367,39 @@ class Chart extends Component {
   }
   /**
    * 缩放图形、下载图片
-   * ratio 缩放比例
+   * focus 缩放比例
    * zoom 放大|缩小
    * downloadImage 图形转换下载
    */
-  focus = (ratio, zoom) => {
-    let scale = ratio;
-    if (isNaN(ratio)) {
-      return false;
-    }
-    const check = (num) => {
-      if (num <= 0) {
-        return 0;
-      }
-      if (num >= 10) {
-        return 10;
-      }
-      return num;
-    };
-    scale = check(scale);
-    if (zoom === 'add' && scale >= 0 && scale < 10) {
+  focus = ( zoom) => {
+    let scale = this.graph.getScale();
+    this.graph.focusPoint(scale);
+    if (zoom === 'add' && scale >= 0 && scale <= 9.8) {
       scale = Math.round(parseFloat(scale + 0.2) * 100) / 100;
     }
     if (zoom === 'sub' && scale <= 10 && scale >= 0) {
       scale = Math.round(parseFloat(scale - 0.2) * 100) / 100;
     }
-    scale = check(scale);
+    scale = this.checkNum(scale, 0, 9.9);
     this.zoom(scale, this.graph);
     this.setState({
       ratio: scale
     });
   }
   /**
-   * 1. 初始化的时候获取到所有节点的model位置。
-   * 2. 反转
+   * 1.是锁定放大的点
+   * 2.将改点移动到画布中间
    */
   zoom = (ratio, graph) => {
-    let zoom = this.center;
-    zoom.x -= 800;
-    zoom.y -= 1000;
+    const zoom = this.position;
+    console.log('zoom----->', zoom);
     const matrix = new G6.Matrix.Matrix3();
-    matrix.translate(-zoom.x, -zoom.y);
+    // const translate1 = matrix.translate(-zoom.x, -zoom.y)
+    // console.log('translate1--->', translate1.elements);
     matrix.scale(ratio, ratio);
-    matrix.translate(zoom.x, zoom.y);
-
+    this.graph.focusPoint(this.position);
+    // const translate2 = matrix.translate(zoom.x, zoom.y);
+    // console.log('translate2--->', translate2.elements);
     graph.updateMatrix(matrix);
     graph.refresh();
   }
@@ -405,16 +425,22 @@ class Chart extends Component {
     const saveName = `${filename}-股权结构图.jpeg`;
     link.download = saveName;
     link.href = dataURL.replace('image/jpeg', 'image/octet-stream');
-    link.click();
-    this.setState({
-      downloadLoading: false
-    });
+    if (/Firefox/i.test(navigator.userAgent)) {
+      const evt = document.createEvent('MouseEvents');
+      evt.initEvent('click', true, true);
+      link.dispatchEvent(evt);
+    } else {
+      link.click();
+    }
+    this.checkDownload(this.props.dataLength, 80); // 重置下载图标
   }
   /**
    * 工具区
    * 1. 根据id查找节点 findNodeDataById
    * 2. 查找根信息 findRootInfo
    * 3. 获取角度 angle
+   * 4. 检测边缘数字 checkNum
+   * 5. 检测是否可以下载 checkDownload
    */
 
   findNodeDataById = (nodeData, nodeId) => {
@@ -449,11 +475,31 @@ class Chart extends Component {
     const diffY = end.y - start.y;
     return 360 * Math.atan(diffY / diffX) / (2 * Math.PI);
   }
+  checkNum = (num, min = 0, max = 9.6) => {
+    if (num <= min) {
+      return 0.1;
+    }
+    if (num >= max) {
+      return 10;
+    }
+    return num;
+  }
+  checkDownload = (length, max, loading = false) => {
+    let status = length > max ? 'error' : 'download';
+    if (loading) {
+      status = length > max ? 'error' : 'loading';
+    }
+    this.setState({
+      downloadStatus: status
+    });
+  };
+
 
   render() {
+    const { ratio, downloadStatus } = this.state;
     const self = this;
-    const { ratio } = this.state;
     const sideToolProps = {
+      download: downloadStatus,
       scale: Math.round(ratio * 10),
       onClick(even) {
         switch (even) {
@@ -461,10 +507,10 @@ class Chart extends Component {
             self.download();
             break;
           case 'add':
-            self.focus(ratio, 'add');
+            self.focus('add');
             break;
           case 'sub':
-            self.focus(ratio, 'sub');
+            self.focus('sub');
             break;
           default:
             break;
@@ -472,13 +518,13 @@ class Chart extends Component {
       }
     };
     return (
-      <div>
+      <div className={styles.chartWrap}>
         <SideTool {...sideToolProps} />
-        <div id={this.graphId} className={styles.chartWrap}></div>
-        <div id={this.deepGraphId} style={{ display: 'none'}}></div>
+        <div id={this.graphId} className={styles.chart}></div>
+        <div id={this.deepGraphId} style={{ display: 'none' }}></div>
       </div>
-    )
-  };
-};
+    );
+  }
+}
 
 export default Chart;
