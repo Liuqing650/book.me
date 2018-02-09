@@ -1,8 +1,9 @@
 import React, { Component, PropTypes } from 'react';
-
 import G6 from '@antv/g6';
 import SideTool from './tool';
 import styles from './index.less';
+// import Tooltip from 'components/lib/Tooltip';
+// import LinkModule from 'components/common/jumps/nameAndIconLinkModule';
 const Global = G6.Global;
 const Util = G6.Util;
 function generateUniqueId(isDeep) {
@@ -89,6 +90,8 @@ G6.registerNode('treeNode', {
       oneLine: (titleBox.height + fontHeight / 2 + 3 * padding) / height,
     };
     anchorPoints.push([0, labelConfig.exist ? points.moreLine : points.oneLine]);
+    // console.log('group---->', group);
+    // console.log('anchorPoints---->', anchorPoints);
     group.set('anchorPoints', anchorPoints);
     return backRect;
   }
@@ -143,7 +146,6 @@ class Chart extends Component {
       url: '',
       ratio: 0.1,
       zoomScale: 0.1, // 初始缩放比例,
-      percent: 0,
     };
     // id生成函数
     this.graphId = generateUniqueId();
@@ -181,29 +183,15 @@ class Chart extends Component {
    * 6. 图片下载按钮事件 download
    */
   onLeftClick = (node) => {
-    const scale = this.graph.getScale();
-    // const model = node.item._attrs.model;
-    const model = node;
-    console.log('model------->', model);
-    this.position = { x: model.x, y: model.y };
-    // this.graph.focusPoint(this.position);
-    // const matrix = new G6.Matrix.Matrix3();
-    // const matrix2 = new G6.Matrix.Matrix3();
-    // console.log('matrix->', matrix);
-    // console.log('matrix2->', matrix2);
-    // const to2 = matrix.to2DObject();
-    // const to3 = matrix.from2DObject(to2);
-    // console.log('三阶矩阵 => 二阶矩阵', to2);
-    // console.log('二阶矩阵 => 三阶矩阵', to3.elements);
-    // console.log('三阶矩阵移动->', matrix.multiplyScalar(scale));
-    // console.log('三阶矩阵反转->', matrix.inverse());
-    // console.log('三阶矩阵平移->', matrix.translate(12, 10).elements);
-    // console.log('三阶矩阵乘法->', matrix.translate(12, 10).elements);
+    // 点击画布任意节点居中
+    this.position = { x: node.x, y: node.y };
+    this.graph.focusPoint(this.position);
   }
   onNodeClick = (node) => {
+    // Tooltip.remove();
     const { item, itemType, domEvent } = node;
-    console.log('node---->', node);
-    console.log('item---->', item);
+    // console.log('node---->', node);
+    // console.log('item---->', item);
     // if (item && item._attrs && itemType === 'node') {
     //   const { model } = item._attrs;
     //   domEvent.preventDefault();
@@ -243,22 +231,6 @@ class Chart extends Component {
   }
   onMouseWheel = (event, isFirefox) => {
     const scale = this.graph.getScale();
-    console.log('event------->', event);
-    console.log('this.graph------->', this.graph);
-
-    const matrix = new G6.Matrix.Matrix3();
-    // 三阶矩阵主要用于放大缩小，平移等，
-    const copymatrix = matrix.copy(matrix);
-    const copymatrix2 = matrix.copy(matrix);
-    console.log('copymatrix->', copymatrix);
-    const to2 = copymatrix.to2DObject();
-    const to3 = copymatrix.from2DObject(to2);
-    console.log('二阶矩阵', to2);
-    console.log('三阶矩阵', to3);
-    console.log('三阶矩阵乘法->', copymatrix.multiplyScalar(scale));
-    console.log('三阶矩阵缩放->', copymatrix2.scale(scale, scale));
-
-
     if (!isFirefox) {
       const handleScale = Math.round(parseFloat(scale) * 100) / 100;
       this.setState({
@@ -331,9 +303,9 @@ class Chart extends Component {
     graph.source(props.data);
     this.graph = graph;
     this.graph.render();
-    console.log(this.graph.getScale());
+    // console.log(this.graph.getScale());
     this.graph.on('contextmenu', this.onNodeClick);
-    this.graph.on('click', this.onLeftClick);
+    // this.graph.on('click', this.onLeftClick);
     this.graph.on('itemmouseenter', this.onMouseEnter);
     this.graph.on('itemmouseleave', this.onMouseLever);
     this.graph.on('mousewheel', this.onMouseWheel);
@@ -342,16 +314,18 @@ class Chart extends Component {
         this.onMouseWheel(event, true);
       });
     }
+    // Tooltip.remove();
     this.checkDownload(this.props.dataLength, 80);
   }
   createDeepTree = (props, zoom, dataLength) => {
+    // console.log('dataLength------->', dataLength);
     const width = dataLength * 300;
     const deepGraph = new G6.Tree({
       id: this.deepGraphId,
       fitView: 'autoZoom',
       ...props,
       width: width,
-      height: props.height
+      height: props.height + zoom * dataLength * 10
     });
     deepGraph.node().shape('treeNode');
     deepGraph.node().label((data) => {
@@ -371,9 +345,8 @@ class Chart extends Component {
    * zoom 放大|缩小
    * downloadImage 图形转换下载
    */
-  focus = ( zoom) => {
+  focus = (zoom) => {
     let scale = this.graph.getScale();
-    this.graph.focusPoint(scale);
     if (zoom === 'add' && scale >= 0 && scale <= 9.8) {
       scale = Math.round(parseFloat(scale + 0.2) * 100) / 100;
     }
@@ -386,20 +359,16 @@ class Chart extends Component {
       ratio: scale
     });
   }
-  /**
-   * 1.是锁定放大的点
-   * 2.将改点移动到画布中间
-   */
   zoom = (ratio, graph) => {
-    const zoom = this.position;
-    console.log('zoom----->', zoom);
+    const zoom = {
+      x: 0,
+      y: 0
+    };
     const matrix = new G6.Matrix.Matrix3();
-    // const translate1 = matrix.translate(-zoom.x, -zoom.y)
-    // console.log('translate1--->', translate1.elements);
+    matrix.translate(-zoom.x, -zoom.y);
     matrix.scale(ratio, ratio);
-    this.graph.focusPoint(this.position);
-    // const translate2 = matrix.translate(zoom.x, zoom.y);
-    // console.log('translate2--->', translate2.elements);
+    matrix.translate(zoom.x, zoom.y);
+
     graph.updateMatrix(matrix);
     graph.refresh();
   }
@@ -493,7 +462,9 @@ class Chart extends Component {
       downloadStatus: status
     });
   };
-
+  resetTool = () => {
+    // Tooltip.remove();
+  }
 
   render() {
     const { ratio, downloadStatus } = this.state;
@@ -518,7 +489,7 @@ class Chart extends Component {
       }
     };
     return (
-      <div className={styles.chartWrap}>
+      <div className={styles.chartWrap} onBlur={this.resetTool}>
         <SideTool {...sideToolProps} />
         <div id={this.graphId} className={styles.chart}></div>
         <div id={this.deepGraphId} style={{ display: 'none' }}></div>
