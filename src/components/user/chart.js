@@ -12,10 +12,9 @@ function generateUniqueId(isDeep) {
 // 设置全局节点样式
 Global.nodeStyle = {
   stroke: '#222',
-  fill: '#fff',
+  fill: '#f00',
   lineWidth: 1,
-  radius: 0,
-  fillOpacity: 0.10
+  radius: 0
 };
 
 G6.registerNode('treeNode', {
@@ -154,8 +153,13 @@ class Chart extends Component {
     this.deepGraphId = generateUniqueId(true);
     this.deepGraph = null; // 用作下载
     this.deepGraphContainer = null;
-    this.center = { x: 480, y: 300 };
+    this.center = { x: 400, y: 300 };
     this.position = { x: 0, y: 0 };
+    // 初始根节点的 Dom 位置
+    this.initRoot = { x: 0, y: 0};
+    // 平移后根节点的 Dom 位置
+    this.move = { x: 0, y: 0 };
+
     this.nodeStyle = {
       lineWidth: 1
     };
@@ -183,18 +187,23 @@ class Chart extends Component {
    * 6. 图片下载按钮事件 download
    */
   onLeftClick = (node) => {
-    // 点击画布任意节点居中
+    const graph = this.graph;
+    this.caclulationCenter(node);
     this.position = { x: node.x, y: node.y };
-    this.graph.focusPoint(this.position);
+    const matrix = new G6.Matrix.Matrix3();
+    // matrix.scale(3, 3);
+    matrix.translate(this.move.x, this.move.y);
+    graph.updateMatrix(matrix);
+    graph.refresh();
   }
   onNodeClick = (node) => {
     // Tooltip.remove();
     const { item, itemType, domEvent } = node;
-    // console.log('node---->', node);
+    console.log('node---->', node);
     // console.log('item---->', item);
     // if (item && item._attrs && itemType === 'node') {
     //   const { model } = item._attrs;
-    //   domEvent.preventDefault();
+      domEvent.preventDefault();
     //   if (model.dataType === 1) {
     //     Tooltip.show({
     //       pageX: domEvent.pageX,
@@ -242,6 +251,11 @@ class Chart extends Component {
       this.focus(zoom);
     }
   }
+  onDragend = (node) => {
+    console.log('node---->', node);
+    // this.caclulationCenter(node);
+    console.log('move---->', this.move);
+  }
   download = () => {
     this.setState({
       downloadLoading: true
@@ -276,7 +290,10 @@ class Chart extends Component {
   initTree(props) {
     const graph = new G6.Tree({
       id: this.graphId,
-      fitView: 'autoZoom',
+      fitView: {
+        x: 1,
+        y: 1
+      },
       ...props
     });
     graph.tooltip(false);
@@ -305,15 +322,21 @@ class Chart extends Component {
     this.graph.render();
     // console.log(this.graph.getScale());
     this.graph.on('contextmenu', this.onNodeClick);
-    // this.graph.on('click', this.onLeftClick);
+    this.graph.on('click', this.onLeftClick);
     this.graph.on('itemmouseenter', this.onMouseEnter);
     this.graph.on('itemmouseleave', this.onMouseLever);
     this.graph.on('mousewheel', this.onMouseWheel);
+    this.graph.on('dragend', this.onDragend);
     if (/Firefox/i.test(navigator.userAgent)) {
       this.graphContainer.addEventListener('DOMMouseScroll', (event) => {
         this.onMouseWheel(event, true);
       });
     }
+    console.log('放大倍数---->', this.graph.getScale());
+    // 拿到根节点的位置
+    this.initRoot = this.graph.converPoint(0, 0);
+    this.move = Object.assign({}, this.initRoot);
+    console.log('根节点放大倍数---->', this.initRoot);
     // Tooltip.remove();
     this.checkDownload(this.props.dataLength, 80);
   }
@@ -360,17 +383,27 @@ class Chart extends Component {
     });
   }
   zoom = (ratio, graph) => {
-    const zoom = {
-      x: 0,
-      y: 0
-    };
+    const point = this.position;
+    const center = this.center;
+    const test = {x: 0, y: 0}
+    const domNodeTest = this.graph.converPoint(test);
+    // const zoom = {
+    //   x: center.x - domNodeTest.x,
+    //   y: center.y - domNodeTest.y
+    // };
+    const zoom = this.center;
+    console.log('domNodeTest-------->', domNodeTest);
+    console.log('zoom------->', zoom);
+    console.log('ratio------->', ratio);
+    const domNode = graph.converPoint(point);
+    console.log('domNode-------->', domNode);
     const matrix = new G6.Matrix.Matrix3();
-    matrix.translate(-zoom.x, -zoom.y);
+    // matrix.translate(-zoom.x, -zoom.y);
     matrix.scale(ratio, ratio);
     matrix.translate(zoom.x, zoom.y);
-
     graph.updateMatrix(matrix);
     graph.refresh();
+    console.log('getScale------->', this.graph.getScale());
   }
   downloadImage = (filename) => {
     const canvasArr = this.deepGraph.get('graphContainer').getElementsByTagName('canvas');
@@ -462,6 +495,32 @@ class Chart extends Component {
       downloadStatus: status
     });
   };
+  caclulationCenter = (node) => {
+    /**
+     * G6 平移测试
+     * 1. 初始根节点DOM this.initRoot
+     * 2. 移动的根节点DOM this.move, 初始于根节点相等
+     * 3. 设置画布的中点 this.center
+     * 4. 获取节点的 DOM 节点 node
+     * 5. 获取缩放比例 scale
+     * 6. 移动位置 move
+     */
+    const scale = this.graph.getScale();
+    const move = {
+      x: this.center.x - node.domX,
+      y: this.center.y - node.domY,
+    };
+    const moveRoot = {
+      x: this.move.x + move.x,
+      y: this.move.y + move.y,
+    }
+    // const movePosition = {
+    //   x: (tempRoot.x - this.initRoot.x) / scale,
+    //   y: (tempRoot.y - this.initRoot.y) / scale,
+    // }
+    // console.log('movePosition---->', movePosition);
+    this.move = moveRoot;
+  }
   resetTool = () => {
     // Tooltip.remove();
   }
@@ -492,7 +551,7 @@ class Chart extends Component {
       <div className={styles.chartWrap} onBlur={this.resetTool}>
         <SideTool {...sideToolProps} />
         <div id={this.graphId} className={styles.chart}></div>
-        <div id={this.deepGraphId} style={{ display: 'none' }}></div>
+        <div id={this.deepGraphId} style={{ display: 'block ' }}></div>
       </div>
     );
   }

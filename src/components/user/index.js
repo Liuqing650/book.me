@@ -8,6 +8,7 @@ const User = ({
   const chartProps = {
     data: baseData,
     dataLength: dataLength,
+    width: 800,
     height: 600,
     fitViewPadding: 30,
     layoutCfg: {
@@ -20,10 +21,10 @@ const User = ({
       }
     },
     grid: null,
-    // grid: {
-    //   forceAlign: true, // 是否支持网格对齐
-    //   cell: 0,         // 网格大小
-    // },
+    grid: {
+      forceAlign: true, // 是否支持网格对齐
+      cell: 0,         // 网格大小
+    },
    // behaviourFilter: ['wheelZoom'], // 过滤(禁用)鼠标滚轮缩放行为
     saveData(data) {
       console.log('data------>', data);
