@@ -162,7 +162,7 @@ class Chart extends Component {
     // node 节点的 (x, y)
     this.node = { x: 0, y: 0 };
     // 测试比例
-    this.add = 10;
+    this.add = 22;
     // 拖拽点
     this.drag = {
       start: {
@@ -203,14 +203,28 @@ class Chart extends Component {
    * 8. 图片下载按钮事件 download
    */
   onLeftClick = (node) => {
-    const graph = this.graph;
-    this.node = {
-      x: node.x,
-      y: node.y
-    }
+    // const graph = this.graph;
+    // this.node = {
+    //   x: node.x,
+    //   y: node.y
+    // }
+    // 分析放大倍数
+    const { dataLength } = this.props;
+    console.log('dataLength------>', dataLength);
     console.log('node------->', node);
-    this.caclulationCenter(node);
-    console.log('root------->', this.root);
+    // this.caclulationCenter(node);
+    // console.log('root------->', this.root);
+
+    const scale = this.add;
+    const width = 800;
+    const height = 600;
+    // this.graph.changeSize(width * (1 + scale), height * (1 + scale));
+    // this.graph.autoZoom();
+    console.log('放大倍数---->', this.graph.getScale());
+    console.log('add---->', this.add);
+    this.add = this.add + 1;
+    console.log('width---->', (width * (1 + scale)));
+    console.log('height---->', (height * (1 + scale)));
     // this.position = { x: node.x, y: node.y };
     // const matrix = new G6.Matrix.Matrix3();
     // matrix.scale(3, 3);
@@ -319,16 +333,20 @@ class Chart extends Component {
     // if (dataLength <= 80) {
       this.createDeepTree(this.props);
 
-      const scale = dataLength;
-      console.log('scale---->', scale);
-      const width = this.center.x;
-      const height = this.center.y;
-      this.deepGraph.changeSize(width * (1 + scale), height * (1 + scale));
+      // const scale = dataLength;
+      // console.log('scale---->', scale);
+      // const width = this.center.x;
+      // const height = this.center.y;
+      // this.deepGraph.changeSize(width * (1 + scale), height * (1 + scale));
+      console.log('2222222222');
       this.deepGraph.autoZoom();
+      console.log('3333333333');
       // this.graph.autoZoom(); // 可视图层缩放到适应屏幕
       const saveName = this.findRootInfo('treename');
       setTimeout(() => {
+        console.log('44444444444');
         this.downloadImage(saveName ? saveName : '');
+        console.log('1000000000000');
       }, 500);
     // }
   };
@@ -391,6 +409,8 @@ class Chart extends Component {
     console.log('根节点放大倍数---->', this.initRoot);
     // Tooltip.remove();
     this.checkDownload(this.props.dataLength, 80);
+    const { dataLength } = this.props;
+    // this.add = dataLength / 10;
   }
   createDeepTree = (props) => {
     // console.log('dataLength------->', dataLength);
@@ -410,6 +430,7 @@ class Chart extends Component {
     deepGraph.source(props.data);
     this.deepGraph = deepGraph;
     this.deepGraph.render();
+    console.log('11111111');
   }
   /**
    * 缩放图形、下载图片
@@ -449,6 +470,7 @@ class Chart extends Component {
     canvasArr[0].style.backgroundColor = '#fff';
     canvasArr[1].style.backgroundColor = 'transparent';
     canvasArr[0].getContext('2d').drawImage(canvasArr[1], 0, 0);
+    console.log('5555555555');
     // 创建新画布，矩形填充整个画布，再次合并所有画布
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
@@ -457,13 +479,16 @@ class Chart extends Component {
     ctx.fillStyle = '#fff';
     ctx.fillRect(0, 0, width, height);
     ctx.drawImage(canvasArr[0], 0, 0);
+    console.log('6666666666666');
     console.log(filename);
     // 创建并下载图片
     const dataURL = canvas.toDataURL('image/jpeg');
+    console.log('7777777777777');
     const link = document.createElement('a');
     const saveName = `${filename}-股权结构图.jpeg`;
     link.download = saveName;
     link.href = dataURL.replace('image/jpeg', 'image/octet-stream');
+    console.log('8888888888888');
     if (/Firefox/i.test(navigator.userAgent)) {
       const evt = document.createEvent('MouseEvents');
       evt.initEvent('click', true, true);
@@ -471,6 +496,7 @@ class Chart extends Component {
     } else {
       link.click();
     }
+    console.log('999999999999999');
     this.checkDownload(this.props.dataLength, 80); // 重置下载图标
   }
   /**

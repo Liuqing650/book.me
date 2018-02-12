@@ -1,3 +1,4 @@
+import dataJson from './long.json';
 export default {
 
     namespace: 'main',
@@ -410,7 +411,8 @@ export default {
           }
           state.dataLength = Math.round(baseData.children.length / 2) + frInfo.children.length;
         }
-        structureMapping(Object.assign({}, state.mockData));
+        // structureMapping(Object.assign({}, state.mockData));
+        structureMapping(Object.assign({}, dataJson));
         state.baseData = baseData;
         console.log(baseData);
         return { ...state };

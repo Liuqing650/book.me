@@ -14,10 +14,14 @@ const User = ({
     layoutCfg: {
       direction: "V",
       getHGap: () => {
-          return 50;
+        return 35;
       },
       getVGap: () => {
-          return 80;
+        let height = 80;
+        if (dataLength > 80) {
+          height = dataLength * 2;
+        }
+        return height;
       }
     },
     grid: null,
