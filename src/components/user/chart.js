@@ -161,8 +161,10 @@ class Chart extends Component {
     this.root = { x: 0, y: 0 };
     // node 节点的 (x, y)
     this.node = { x: 0, y: 0 };
+    // dom 节点的 (domX, domY)
+    this.domNode = {x: 0, y: 0};
     // 测试比例
-    this.add = 22;
+    this.add = 1;
     // 拖拽点
     this.drag = {
       start: {
@@ -203,38 +205,34 @@ class Chart extends Component {
    * 8. 图片下载按钮事件 download
    */
   onLeftClick = (node) => {
-    // const graph = this.graph;
-    // this.node = {
-    //   x: node.x,
-    //   y: node.y
-    // }
+    const graph = this.graph;
+    this.node = {
+      x: node.x,
+      y: node.y
+    }
+    this.domNode = {
+      x: node.domX,
+      y: node.domY
+    }
     // 分析放大倍数
     const { dataLength } = this.props;
-    console.log('dataLength------>', dataLength);
     console.log('node------->', node);
-    // this.caclulationCenter(node);
-    // console.log('root------->', this.root);
-
+    // 获取缩放比例
     const scale = this.add;
-    const width = 800;
-    const height = 600;
-    // this.graph.changeSize(width * (1 + scale), height * (1 + scale));
-    // this.graph.autoZoom();
-    console.log('放大倍数---->', this.graph.getScale());
-    console.log('add---->', this.add);
-    this.add = this.add + 1;
-    console.log('width---->', (width * (1 + scale)));
-    console.log('height---->', (height * (1 + scale)));
-    // this.position = { x: node.x, y: node.y };
-    // const matrix = new G6.Matrix.Matrix3();
-    // matrix.scale(3, 3);
-    // matrix.translate(this.root.x, this.root.y);
-    // graph.updateMatrix(matrix);
-    // graph.refresh();
+    // 计算放大后偏移的位置
 
-    // 处理放大图片
-    // let scale = this.graph.getScale();
-    // scale = Math.round(parseFloat(scale + 0.2) * 100) / 100;
+    console.log('放大倍数---->', this.graph.getScale());
+    console.log('scale---->', scale);
+    console.log('node节点坐标------->', this.node);
+    this.add = this.add + 0.1;
+
+    const matrix = new G6.Matrix.Matrix3();
+    matrix.scale(scale, scale);
+    console.log('matrix--->', matrix);
+    matrix.translate(10, 10);
+    // matrix.translate(this.root.x, this.root.y);
+    graph.updateMatrix(matrix);
+    graph.refresh();
   }
   onNodeClick = (node) => {
     // Tooltip.remove();
@@ -329,7 +327,6 @@ class Chart extends Component {
     // 分析放大倍数
     const { dataLength } = this.props;
     this.checkDownload(dataLength, 80, true);
-    console.log('dataLength------>', dataLength);
     // if (dataLength <= 80) {
       this.createDeepTree(this.props);
 
@@ -338,15 +335,11 @@ class Chart extends Component {
       // const width = this.center.x;
       // const height = this.center.y;
       // this.deepGraph.changeSize(width * (1 + scale), height * (1 + scale));
-      console.log('2222222222');
       this.deepGraph.autoZoom();
-      console.log('3333333333');
       // this.graph.autoZoom(); // 可视图层缩放到适应屏幕
       const saveName = this.findRootInfo('treename');
       setTimeout(() => {
-        console.log('44444444444');
         this.downloadImage(saveName ? saveName : '');
-        console.log('1000000000000');
       }, 500);
     // }
   };
@@ -430,7 +423,6 @@ class Chart extends Component {
     deepGraph.source(props.data);
     this.deepGraph = deepGraph;
     this.deepGraph.render();
-    console.log('11111111');
   }
   /**
    * 缩放图形、下载图片
@@ -453,15 +445,11 @@ class Chart extends Component {
     });
   }
   zoom = (ratio, graph) => {
-    this.caclulationZoomCenter(ratio);
     const matrix = new G6.Matrix.Matrix3();
     matrix.scale(ratio, ratio);
     matrix.translate(this.root.x, this.root.y);
     graph.updateMatrix(matrix);
     graph.refresh();
-
-    // console.log('root---zoom---->', this.root);
-    // console.log('getScale------->', this.graph.getScale());
   }
   downloadImage = (filename) => {
     const canvasArr = this.deepGraph.get('graphContainer').getElementsByTagName('canvas');
@@ -470,7 +458,6 @@ class Chart extends Component {
     canvasArr[0].style.backgroundColor = '#fff';
     canvasArr[1].style.backgroundColor = 'transparent';
     canvasArr[0].getContext('2d').drawImage(canvasArr[1], 0, 0);
-    console.log('5555555555');
     // 创建新画布，矩形填充整个画布，再次合并所有画布
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
@@ -479,16 +466,13 @@ class Chart extends Component {
     ctx.fillStyle = '#fff';
     ctx.fillRect(0, 0, width, height);
     ctx.drawImage(canvasArr[0], 0, 0);
-    console.log('6666666666666');
     console.log(filename);
     // 创建并下载图片
     const dataURL = canvas.toDataURL('image/jpeg');
-    console.log('7777777777777');
     const link = document.createElement('a');
     const saveName = `${filename}-股权结构图.jpeg`;
     link.download = saveName;
     link.href = dataURL.replace('image/jpeg', 'image/octet-stream');
-    console.log('8888888888888');
     if (/Firefox/i.test(navigator.userAgent)) {
       const evt = document.createEvent('MouseEvents');
       evt.initEvent('click', true, true);
@@ -496,7 +480,6 @@ class Chart extends Component {
     } else {
       link.click();
     }
-    console.log('999999999999999');
     this.checkDownload(this.props.dataLength, 80); // 重置下载图标
   }
   /**
@@ -586,6 +569,7 @@ class Chart extends Component {
   }
 
   caclulationZoomCenter = (scale) => {
+    const domNode = this.domNode;
     const node = this.node;
     // 计算出node将会移动的位置
     const nodeMove = {

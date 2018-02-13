@@ -225,7 +225,8 @@ matrix.translate(zoom.x, zoom.y);
 
 在矩阵中
 ```
-矩阵中  X = x+dx;  Y = y+dy; you
+矩阵中  X = x+dx;  Y = y+dy;
+
                     [1   0   0]
 [X  Y  1] = [x y 1] [0   1   0]
                     [dx  dy  1]
@@ -249,4 +250,119 @@ matrix.translate(zoom.x, zoom.y);
 node(domX, domY)
 
 
+## 缩放
 
+API
+
+```
+/**
+ * 仿射缩放
+ * @param  {Number} sx   横轴缩放比率
+ * @param  {Number} sy   纵轴缩放比率
+ */
+matrix.scale(sx, sy);
+```
+
+每一次缩放的时候，只在一个点点击进行放大的时候，发现 (node.x, node.y) 在偏移， (domX, domY) 没有改变。
+其实每一次放大都是将坐标轴比例给扩大了，使得整个图形被动进行了扩展，因此图形自然就变得更加大了。因此光标不动的时候，图像的扩展，导致聚焦的点逐步偏移
+通过点击 graph 的相同位置能够证实其实 (node.x, node.y)没有变更， 只是(domX, domY) 在偏移。
+
+偏移公式：
+
+```
+domX = domX * (1 + scale);
+domY = domY * (1 + scale);
+```
+
+### 测试
+
+1. 先只加入缩放 
+
+```
+    const matrix = new G6.Matrix.Matrix3();
+    matrix.scale(scale, scale);
+    graph.updateMatrix(matrix);
+    graph.refresh();
+```
+
+发现缩放后的图形一直位于 `canvas` 的原点， `graph` 的原点和 `canvas` 的原点始终重合，说明如果不指定平移，那么将以默认的原点值进行平移。
+
+2. 加入平移
+
+```
+    const matrix = new G6.Matrix.Matrix3();
+    matrix.scale(scale, scale);
+    matrix.translate(10, 10);
+    graph.updateMatrix(matrix);
+    graph.refresh();
+```
+
+发现缩放后的 `graph` 的原点一直位于 `canvas` 的 `(10, 10)` 的位置上面， 缩放 `graph` 时原点始终在这点保持不变，其他的 (node.x, node.y) 位置也相对不变。
+
+### 分析
+因此，每一次如果希望缩放的位置不变更，只能将图像的 `(domX, domY)` 进行实时更新，记录缩放的比例 `scale` 值，在进行下一次缩放之前，计算出需要移动多少才能够保证放大的点还处于 **已经发生变化** 的 `canvas` 坐标系中心。
+
+需要进行以下4步： 
+1. 缓存下当前点击的dom点 `(domX, domY)`
+2. 获取即将缩放的比例，计算出放大后原本处于中心的点将偏移到何处。
+3. 计算此刻的根节点需要偏移到什么位置时候，原本处于中心的点能够依然位于中心。
+4. 缩放完成以后进行偏移
+
+### 调试步骤
+
+1. 点击点存入 dom 点。
+2. 获取缩放比例，
+
+## canvas 图像下载
+如果使用单纯的放大宽度和高度，不仅仅增加了cpu、GPU 的负载，还受最大面积限制，如果图像过于庞大，可以思考一下如何增加 canvas 的像素点。研究canvas对像素点的处理，也许就清晰了。
+【理论上可行，参考网页端的ps】
+
+
+## 附加知识
+
+>矩阵的平移和伸缩： http://blog.csdn.net/rabbitguiming/article/details/3962974
+http://blog.csdn.net/zsq306650083/article/details/8776168 (更好)
+
+涉及到点乘和叉乘
+----
+点乘,也叫向量的内积、数量积.顾名思义,求下来的结果是一个数.
+向量a·向量b=|a||b|cos
+在物理学中,已知力与位移求功,实际上就是求向量F与向量s的内积,即要用点乘.
+
+叉乘,也叫向量的外积、向量积.顾名思义,求下来的结果是一个向量,记这个向量为c.
+
+|向量c|=|向量a×向量b|=|a||b|sin 
+
+向量c的方向与a,b所在的平面垂直,且方向要用“右手法则”判断（用右手的四指先表示向量a的方向,然后手指朝着手心的方向摆动到向量b的方向,大拇指所指的方向就是向量c的方向）.
+因此 
+向量的外积不遵守乘法交换率,因为 
+向量a×向量b=-向量b×向量a 
+在物理学中,已知力与力臂求力矩,就是向量的外积,即叉乘.
+将向量用坐标表示（三维向量）,
+若
+向量a=(a1,b1,c1),向量b=(a2,b2,c2),
+则 
+向量a·向量b=a1a2 + b1b2 + c1c2
+
+                | i j k  | 
+向量a × 向量b =  |a1 b1 c1|  =(b1c2-b2c1, c1a2-a1c2, a1b2-a2b1) 
+                |a2 b2 c2|
+
+（i、j、k分别为空间中相互垂直的三条坐标轴的单位向量）.
+
+
+
+## 
+http://blog.csdn.net/u010027419/article/details/41944423
+
+canvas对图片的像素级处理--ImageData的应用
+https://www.cnblogs.com/suspiderweb/p/4936723.html 
+
+canvas 像素
+http://www.360doc.com/content/16/0519/08/21698478_560342454.shtml
+
+CanvasRenderingContext2D.putImageData()
+https://developer.mozilla.org/zh-CN/docs/Web/API/CanvasRenderingContext2D/putImageData
+
+像素操作
+https://developer.mozilla.org/zh-CN/docs/Web/API/Canvas_API/Tutorial/Pixel_manipulation_with_canvas
