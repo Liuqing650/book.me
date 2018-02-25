@@ -413,6 +413,7 @@ export default {
         }
         structureMapping(Object.assign({}, state.mockData));
         // structureMapping(Object.assign({}, dataJson));
+        // structureMapping(Object.assign({}, state.treeData));
         state.baseData = baseData;
         console.log(baseData);
         return { ...state };

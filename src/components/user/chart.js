@@ -99,7 +99,8 @@ G6.registerEdge('treeEdge', {
   afterDraw(cfg, group, keyShape) {
     const points = cfg.points;
     const model = cfg.target._attrs.model;
-    // console.log('model-----?', model);
+    console.log('model-----?', cfg.target.getModel());
+
     const end = points[points.length - 1];
     const center = keyShape.getPoint(0.5);
     const before = keyShape.getPoint(0.6);
@@ -163,6 +164,7 @@ class Chart extends Component {
     this.node = { x: 0, y: 0 };
     // dom 节点的 (domX, domY)
     this.domNode = {x: 0, y: 0};
+    // 中点
     // 测试比例
     this.add = 1;
     // 拖拽点
@@ -214,25 +216,46 @@ class Chart extends Component {
       x: node.domX,
       y: node.domY
     }
-    // 分析放大倍数
-    const { dataLength } = this.props;
-    console.log('node------->', node);
+
+    // 计算中心点的位置
+    const centerNode = this.graph.invertPoint(this.center);
+
+    const centerDom = this.graph.converPoint(centerNode);
+    console.log('centerNode-------->', centerNode);
+    console.log('centerDom-------->', centerDom);
+    const move = {
+      x: this.center.x - node.domX,
+      y: this.center.y - node.domY,
+    };
+    const moveRoot = {
+      x: this.root.x + scale * move.x,
+      y: this.root.y + scale * move.y,
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+    console.log('node--------->', node);
     // 获取缩放比例
-    const scale = this.add;
-    // 计算放大后偏移的位置
-
-    console.log('放大倍数---->', this.graph.getScale());
-    console.log('scale---->', scale);
-    console.log('node节点坐标------->', this.node);
-    this.add = this.add + 0.1;
-
-    const matrix = new G6.Matrix.Matrix3();
-    matrix.scale(scale, scale);
-    console.log('matrix--->', matrix);
-    matrix.translate(10, 10);
-    // matrix.translate(this.root.x, this.root.y);
-    graph.updateMatrix(matrix);
-    graph.refresh();
+    // const scale = this.add;
+    // const matrix = new G6.Matrix.Matrix3();
+    // // matrix.translate(-centerNode.x, -centerNode.y);
+    // matrix.scale(scale, scale);
+    // console.log('matrix--->', matrix);
+    // graph.updateMatrix(matrix);
+    // // matrix.translate(centerNode.x, centerNode.y);
+    // matrix.translate(10, 10);
+    // graph.updateMatrix(matrix);
+    // graph.refresh();
+    // this.add = this.add + 0.1;
   }
   onNodeClick = (node) => {
     // Tooltip.remove();
@@ -356,6 +379,10 @@ class Chart extends Component {
     const graph = new G6.Tree({
       id: this.graphId,
       fitView: 'autoZoom',
+      // fitView: {
+      //   x: 1,
+      //   y: 1
+      // },
       ...props
     });
     graph.tooltip(false);
