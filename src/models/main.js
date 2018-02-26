@@ -311,7 +311,27 @@ export default {
             treename: mapInfo.frname,
             color: '#E5E5E5',
             dataType: 2, // 数据类型： 公司为1， 人名为2
+            position: 'bottom', // 位置
+            layer: 2, // 层数
             arrow: 'none', // 箭头函数: {none: 无箭头, syntropy: 同向箭头, reverse: 反向箭头}
+            children: []
+          };
+          const entinvInfo = {
+            treename: '企业对外投资',
+            color: '#FFFFFF',
+            dataType: 2, // 数据类型： 公司为1， 人名为2
+            position: 'bottom', // 位置
+            layer: 2, // 层数
+            arrow: 'syntropy', // 箭头函数: {none: 无箭头, syntropy: 同向箭头, reverse: 反向箭头}
+            children: []
+          };
+          const shareInfo = {
+            treename: '股东',
+            color: '#FFFFFF',
+            dataType: 2, // 数据类型： 公司为1， 人名为2
+            position: 'top', // 位置
+            layer: 2, // 层数
+            arrow: 'reverse', // 箭头函数: {none: 无箭头, syntropy: 同向箭头, reverse: 反向箭头}
             children: []
           };
           const config = {
@@ -332,10 +352,17 @@ export default {
             const modifyNumber = (value, unit = '万元') => {
               return isNaN(Number(value)) || Number(value).toFixed(2) === '0.00' ? '--' : Number(value).toFixed(2) + unit;
             };
+            const modifyRatio = (value) => {
+              const str = value.replace(/%/g, '');
+              if (!isNaN(Number(str)) && Number(str) !== 0) {
+                return value;
+              }
+              return '--';
+            };
             temp.date = itemData.conDate ? itemData.conDate : '--';
             temp.invest = itemData.subConam ? modifyNumber(itemData.subConam) : '--';
             temp.ratio = itemData.fundedRatio ? itemData.fundedRatio : '--';
-            output.text = `${config.invest}${temp.invest}(${config.ratio}: ${temp.ratio})\n${config.date}: ${temp.date}`;
+            output.text = `${config.invest}${temp.invest}(${config.ratio}: ${modifyRatio(temp.ratio)})\n${config.date}: ${temp.date}`;
             return output;
           };
           /**
@@ -367,7 +394,7 @@ export default {
            * @param {*Number} dataType 数据类型： 公司为1， 人名为2
            * @param {*String} arrow 箭头函数: {none: 无箭头, syntropy: 同向箭头, reverse: 反向箭头}
            */
-          const handleData = (arrData, keys, status = 1, isFr = false, dataType = 1, arrow = 'syntropy') => {
+          const handleData = (arrData, keys, status = 1, isFr = false, dataType = 1, position, arrow = 'syntropy') => {
             arrData.map((item) => {
               let type = dataType;
               if (dataType === 2 && checkCompanyName(item[keys])) {
@@ -378,9 +405,13 @@ export default {
               item.treeKey = keys;
               item.color = '#FFFFFF';
               item.dataType = type;
+              item.layer = 3;
+              item.position = position, // 位置
               item.arrow = arrow;
               if (status === 1) {
-                baseData.children.push(item);
+                entinvInfo.children.push(item);
+              } else if (status === 3) {
+                shareInfo.children.push(item);
               } else {
                 frInfo.children.push(item);
               }
@@ -388,31 +419,41 @@ export default {
           };
           // 获取法人信息
           if (mapInfo.frinvList) { // 法人对外投资
-            handleData(mapInfo.frinvList, 'entName', 2, false, 1, 'syntropy');
+            handleData(mapInfo.frinvList, 'entName', 2, false, 1, 'bottom', 'syntropy');
           }
           if (mapInfo.frPositionList) { // 法人在外任职
-            handleData(mapInfo.frPositionList, 'entName', 2, true, 1, 'syntropy');
+            handleData(mapInfo.frPositionList, 'entName', 2, true, 1, 'bottom', 'syntropy');
           }
 
           // 存入数据
           baseData.id = 'root';
           baseData.treename = mapInfo.companyName;
           baseData.dataType = 1;
+          baseData.position = 'center', // 位置
+          baseData.layer = 1;
           baseData.arrow = 'none';
           baseData.color = '#E5E5E5';
           baseData.children = [];
           baseData.children.push(frInfo);
+          baseData.children.push(entinvInfo);
+          baseData.children.push(shareInfo);
           // 股东数据
           if (mapInfo.entinvList) { // 企业对外投资
-            handleData(mapInfo.entinvList, 'entName', 1, false, 1, 'syntropy');
+            handleData(mapInfo.entinvList, 'entName', 1, false, 1, 'bottom', 'syntropy');
           }
           if (mapInfo.shareList) { // 股东
-            handleData(mapInfo.shareList, 'shareholderName', 1, false, 2, 'reverse');
+            handleData(mapInfo.shareList, 'shareholderName', 3, false, 2, 'top', 'reverse');
           }
-          state.dataLength = Math.round(baseData.children.length / 2) + frInfo.children.length;
+          state.dataLength = Math.max(entinvInfo.children.length + frInfo.children.length, shareInfo.children.length);
         }
-        structureMapping(Object.assign({}, state.mockData));
-        // structureMapping(Object.assign({}, dataJson));
+        // 短数据
+        const long = false;
+
+        if (!long) {
+          structureMapping(Object.assign({}, state.mockData));
+        } else {
+          structureMapping(Object.assign({}, dataJson));
+        }
         // structureMapping(Object.assign({}, state.treeData));
         state.baseData = baseData;
         console.log(baseData);

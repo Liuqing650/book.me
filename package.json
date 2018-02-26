@@ -17,6 +17,7 @@
     "babel-runtime": "^6.9.2",
     "braft-editor": "^1.1.8",
     "dva": "^2.1.0",
+    "hidpi-canvas": "^1.0.10",
     "html2canvas": "^1.0.0-alpha.9",
     "immutable": "^3.8.2",
     "maby-editor": "0.0.9",

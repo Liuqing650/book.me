@@ -1,11 +1,13 @@
 import React, { Component, PropTypes } from 'react';
 import G6 from '@antv/g6';
 import SideTool from './tool';
+// import html2canvas from 'html2canvas';
 import styles from './index.less';
 // import Tooltip from 'components/lib/Tooltip';
 // import LinkModule from 'components/common/jumps/nameAndIconLinkModule';
 const Global = G6.Global;
 const Util = G6.Util;
+let treeNode = {}; // 存入node 的信息
 function generateUniqueId(isDeep) {
   return isDeep ? `rc-g6-1` : `rc-g6-0`;
 }
@@ -74,7 +76,7 @@ G6.registerNode('treeNode', {
     width = maxwidth + 3 * margin + 2 * padding;
     height = Math.max(detailBox.height) + 2 * padding + titleBox.height;
     fontHeight = detailGroup.get('children')[0].getBBox().height;
-
+    caclulationNode(model, width, 35)
     title.translate(0, -height / 2 + padding);
     detailGroup.translate(-width / 2 + padding, -height / 2 + titleBox.height + padding);
     backRect.attr({
@@ -99,7 +101,6 @@ G6.registerEdge('treeEdge', {
   afterDraw(cfg, group, keyShape) {
     const points = cfg.points;
     const model = cfg.target._attrs.model;
-    console.log('model-----?', cfg.target.getModel());
 
     const end = points[points.length - 1];
     const center = keyShape.getPoint(0.5);
@@ -133,6 +134,22 @@ G6.registerEdge('treeEdge', {
     Util.arrowTo(arrow, before.x, before.y, center.x, center.y, end.x, end.y);
   }
 }, 'smooth');
+
+// 计算最小画布尺寸（用以展示画布完整内容）
+function caclulationNode(model, width, hgap) {
+  if (model.layer < 3) {
+    return null;
+  }
+  if (model.position === 'top') {
+    let topWidth = treeNode && treeNode.topWidth ? treeNode.topWidth : 0;
+    topWidth = topWidth + width;
+    treeNode.topWidth = topWidth;
+  } else if (model.position === 'bottom') {
+    let bottomWidth = treeNode.bottomWidth ? treeNode.bottomWidth : 0;
+    bottomWidth = bottomWidth + width;
+    treeNode.bottomWidth = bottomWidth;
+  }
+}
 class Chart extends Component {
   static propTypes = {
     dataLength: PropTypes.number,
@@ -223,14 +240,8 @@ class Chart extends Component {
     const centerDom = this.graph.converPoint(centerNode);
     console.log('centerNode-------->', centerNode);
     console.log('centerDom-------->', centerDom);
-    const move = {
-      x: this.center.x - node.domX,
-      y: this.center.y - node.domY,
-    };
-    const moveRoot = {
-      x: this.root.x + scale * move.x,
-      y: this.root.y + scale * move.y,
-    }
+
+    // 获取到当前的中心点 centerNode，计算出放大后改点将位于什么位置
 
 
 
@@ -244,15 +255,15 @@ class Chart extends Component {
 
 
     console.log('node--------->', node);
+
+    // 计算点击点，以便放到中间
+    // this.caclulationCenter(node);
+
     // 获取缩放比例
-    // const scale = this.add;
     // const matrix = new G6.Matrix.Matrix3();
-    // // matrix.translate(-centerNode.x, -centerNode.y);
-    // matrix.scale(scale, scale);
-    // console.log('matrix--->', matrix);
-    // graph.updateMatrix(matrix);
-    // // matrix.translate(centerNode.x, centerNode.y);
-    // matrix.translate(10, 10);
+    // matrix.translate(-this.root.x, -this.root.y);
+    // matrix.scale(this.add, this.add);
+    // matrix.translate(this.root.x, this.root.y);
     // graph.updateMatrix(matrix);
     // graph.refresh();
     // this.add = this.add + 0.1;
@@ -349,21 +360,19 @@ class Chart extends Component {
     }
     // 分析放大倍数
     const { dataLength } = this.props;
-    this.checkDownload(dataLength, 80, true);
     // if (dataLength <= 80) {
-      this.createDeepTree(this.props);
+    this.createDeepTree(this.props);
 
-      // const scale = dataLength;
-      // console.log('scale---->', scale);
-      // const width = this.center.x;
-      // const height = this.center.y;
-      // this.deepGraph.changeSize(width * (1 + scale), height * (1 + scale));
-      this.deepGraph.autoZoom();
-      // this.graph.autoZoom(); // 可视图层缩放到适应屏幕
-      const saveName = this.findRootInfo('treename');
-      setTimeout(() => {
-        this.downloadImage(saveName ? saveName : '');
-      }, 500);
+    // const scale = dataLength / 3;
+    // console.log('scale---->', scale);
+    // const width = this.center.x;
+    // const height = this.center.y;
+    this.deepGraph.changeSize(window.innerWidth, window.innerHeight);
+    this.graph.autoZoom(); // 可视图层缩放到适应屏幕
+    const saveName = this.findRootInfo('treename');
+    setTimeout(() => {
+      this.downloadImage(saveName ? saveName : '');
+    }, 500);
     // }
   };
   /**
@@ -430,6 +439,7 @@ class Chart extends Component {
     // Tooltip.remove();
     this.checkDownload(this.props.dataLength, 80);
     const { dataLength } = this.props;
+    console.log('treeNode--->', treeNode);
     // this.add = dataLength / 10;
   }
   createDeepTree = (props) => {
@@ -437,7 +447,9 @@ class Chart extends Component {
     const deepGraph = new G6.Tree({
       id: this.deepGraphId,
       fitView: 'autoZoom',
-      ...props
+      ...props,
+      // height: Math.max(treeNode.topWidth, treeNode.bottomWidth),
+      // width: 600,
     });
     deepGraph.node().shape('treeNode');
     deepGraph.node().label((data) => {
@@ -448,6 +460,7 @@ class Chart extends Component {
     }).style(this.nodeStyle);
     deepGraph.edge().shape('treeEdge');
     deepGraph.source(props.data);
+    this.deepGraphContainer = deepGraph.get('graphContainer');
     this.deepGraph = deepGraph;
     this.deepGraph.render();
   }
@@ -483,30 +496,35 @@ class Chart extends Component {
     const { height, width } = canvasArr[0];
     // 设置图形层背景颜色，合并为一个canvas
     canvasArr[0].style.backgroundColor = '#fff';
-    canvasArr[1].style.backgroundColor = 'transparent';
-    canvasArr[0].getContext('2d').drawImage(canvasArr[1], 0, 0);
-    // 创建新画布，矩形填充整个画布，再次合并所有画布
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    canvas.width = width;
-    canvas.height = height;
-    ctx.fillStyle = '#fff';
-    ctx.fillRect(0, 0, width, height);
-    ctx.drawImage(canvasArr[0], 0, 0);
-    console.log(filename);
-    // 创建并下载图片
-    const dataURL = canvas.toDataURL('image/jpeg');
-    const link = document.createElement('a');
-    const saveName = `${filename}-股权结构图.jpeg`;
-    link.download = saveName;
-    link.href = dataURL.replace('image/jpeg', 'image/octet-stream');
-    if (/Firefox/i.test(navigator.userAgent)) {
-      const evt = document.createEvent('MouseEvents');
-      evt.initEvent('click', true, true);
-      link.dispatchEvent(evt);
-    } else {
-      link.click();
+
+    let dataURL = {};
+    let link = {};
+    let saveName = `${filename}-股权结构图.jpeg`;
+    async function createCanvas() {
+      // 创建新画布，矩形填充整个画布，再次合并所有画布
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      const ratio = 1;
+      canvas.width = 1920;
+      canvas.height = 1080;
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(canvasArr[0], 0, 0, canvas.width * ratio, canvas.height * ratio);
+      // 创建并下载图片
+      dataURL = await canvas.toDataURL('image/jpeg');
+      console.log('dataURL---<');
+      link = document.createElement('a');
+      link.download = saveName;
+      link.href = dataURL.replace('image/jpeg', 'image/octet-stream');
+      if (/Firefox/i.test(navigator.userAgent)) {
+        const evt = document.createEvent('MouseEvents');
+        evt.initEvent('click', true, true);
+        link.dispatchEvent(evt);
+      } else {
+        link.click();
+      }
     }
+    createCanvas();
     this.checkDownload(this.props.dataLength, 80); // 重置下载图标
   }
   /**

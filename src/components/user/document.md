@@ -61,7 +61,7 @@ export default Chart;
 
 ## 效果图
 
-![树型图效果预览](http://img.mabylove.cn/g6/树形图效果.png)
+![树型图效果预览](https://liuqing650.github.io/view/g6/树形图效果.png)
 
 ## 使用步骤
 
@@ -108,7 +108,7 @@ function generateUniqueId() {
 
 ### 5. 创建绘画 **G6** 图形函数
   G6 包含了很多的方法
-  ![](http://img.mabylove.cn/g6/G6的函数.png)
+  ![](https://liuqing650.github.io/view/g6/G6的函数.png)
 
   - 图基类：[G6.Graph](https://antv.alipay.com/zh-cn/g6/1.x/api/graph.html) 
   - 网图类：[G6.Net](https://antv.alipay.com/zh-cn/g6/1.x/api/net.html)
@@ -378,9 +378,9 @@ graph.find(id)
  */
 graph.save();
 ```
-![](http://img.mabylove.cn/g6/%E6%95%B0%E6%8D%AE%E6%8F%90%E5%8F%96.png)
+![](https://liuqing650.github.io/view/g6/%E6%95%B0%E6%8D%AE%E6%8F%90%E5%8F%96.png)
 
-## 复杂功能阐述
+## 使用问题阐述
 
 实际开发过程之中，由于 `G6` 暂未开源， 部分功能又不完善， 需要寻找解决新的方式。
 
@@ -388,18 +388,19 @@ graph.save();
 
 画布中分为两层 canvas, 第一层用于展示图形，第二层用于行为交互。分别会以 `id=canvas_1` 和 `id=canvas_2` 进行标记。
 
+![](https://liuqing650.github.io/view/g6/canvas.png)
 ### 两个坐标系
 
 画布中，拥有两个坐标系： **dom坐标系** 和 **node坐标系**
 
 dom坐标系： 以canvas的原点(左上角)为原点的坐标系
-node坐标系：以 `layoutCfg` 布局中根节点位置为原点的坐标系
+node坐标系：以 `layoutCfg` 布局中根节点位置为原点的坐标系, 象限为逆时针方向。
 
 图形中每一个节点(node) 都会包含以上两个坐标的值， **dom坐标** 用于标识当前的节点在 `canvas` 上的位置。 **node坐标** 用于标识当前节点相对于根节点的位置，即在 **node坐标系** 中的位置。
 
 ```
     |(canvas原点) dom坐标系
-  ──┼──────────────────────────
+  ──┼──────────────────────────>
     |           |
     |           |
     |   iii     |    iiii
@@ -434,3 +435,16 @@ node坐标系：以 `layoutCfg` 布局中根节点位置为原点的坐标系
   graph.updateMatrix(matrix); // 更新画布根节点矩阵
   graph.refresh(); // 刷新画布
 ```
+
+放射平移的时候，`matrix.translate(root.x, root.y);` 相当于将 `Paint的指向点` 指向了 `(root.x, root.y)`
+因此在将 `Paint的指向点` 默认为原点.
+
+所以在固定放大某一个点的时候，需要将 `Paint的指向点` 指向到此处进行放大。放大完成以后又将原点回到
+
+### 其他问题
+
+#### 1. canvas 图像占用cpu较高
+
+#### 2. 缩放功能复杂
+
+#### 3. 图片下载问题困难
