@@ -384,7 +384,7 @@ graph.save();
 
 实际开发过程之中，由于 `G6` 暂未开源， 部分功能又不完善， 需要寻找解决新的方式。
 
-### 两个 canvas
+### 两个canvas
 
 画布中分为两层 canvas, 第一层用于展示图形，第二层用于行为交互。分别会以 `id=canvas_1` 和 `id=canvas_2` 进行标记。
 
@@ -443,8 +443,121 @@ node坐标系：以 `layoutCfg` 布局中根节点位置为原点的坐标系, �
 
 ### 其他问题
 
-#### 1. canvas 图像占用cpu较高
+#### 1. 缩放功能复杂
 
-#### 2. 缩放功能复杂
+[缩放](#缩放功能)和[平移](#平移功能)功能都需要用到 [三阶矩阵](https://antv.alipay.com/zh-cn/g6/1.x/api/matrix.html) 的 [仿射](https://antv.alipay.com/zh-cn/g6/1.x/api/matrix.html#_scale)。先进行矩阵的计算，计算完成以后再使用 **Graph** 的 [updateMatrix](https://antv.alipay.com/zh-cn/g6/1.x/api/graph.html#_updateMatrix) 去更新画布根节点矩阵。
 
-#### 3. 图片下载问题困难
+```
+/**
+ * 更新画布根节点矩阵
+ * @param  {Object} matrix 矩阵
+ */
+graph.updateMatrix(point);
+```
+
+每一次的缩放都是默认将 **dom坐标系** 和 **node坐标系** 的原点重合到 **dom坐标系** 上进行放大。无法直接进行当前视图区的中间进行缩放。
+
+参考了示例： [G6是什么](https://antv.alipay.com/zh-cn/g6/1.x/demo/other/g6ppt.html) 的功能进行实现。
+
+[缩放测试示例](https://codepen.io/Liuqing650/pen/JpaEom?editors=0011)
+
+实现办法为：
+```
+  /**
+  * 画布中央缩放
+  * @param  {Object} ratio 缩放比例
+  * @param  {Object} graph 画布,可在内部直接用 this.graph
+  */
+  zoom = (ratio, graph) => {
+    const center = this.center; // 画布的中心
+    const centerNode = graph.invertPoint(center); // 获取中心的 node 位置
+    const p0 = centerNode; // 初始位置
+    const p1 = centerNode; // 结束位置（希望该点一直处于中心，因此和初始位置相同）
+    // 三阶矩阵仿射缩放
+    const matrix = new G6.Matrix.Matrix3();
+    const x = p0.x + (p1.x - p0.x) * 1;
+    const y = p0.y + (p1.y - p0.y) * 1;
+    matrix.translate(-x, -y);
+    matrix.scale(ratio, ratio);
+    matrix.translate(center.x, center.y);
+    this.graph.updateMatrix(matrix); // 更新画布根节点矩阵
+    this.graph.refresh(); // 刷新画布
+  }
+```
+
+#### 2. 图片下载
+
+图片的下载时，只针对 `canvas` 中可视部分进行下载直接使用 `canvas.toDataURL('image/jpeg')；` 就能够实现。但在遇到非常巨大的图片时（超出画布最大包容量）， 这个时候的图片很难下载。
+
+暂时只想到两种处理办法： 
+1. 根据数据量限制下载
+2. 拉伸画布 `graph.changeSize(width, height);`， 让画布尽可能容纳完整个图形
+弊端：对 CPU 压力非常大，浏览器也会因为超出负载而崩溃。
+3. 有待思考...
+
+[下载图片测试示例](https://codepen.io/Liuqing650/pen/jZeabr)
+
+```
+  function downloadImage() {
+    // 1. 获取画布中的 canvas
+    const canvasArr = tree.get('graphContainer').getElementsByTagName('canvas');
+    const { height, width } = canvasArr[0];
+
+    // 2. * 取 canvasArr[0] 做为下载图片，修改样式。
+    canvasArr[0].style.backgroundColor = '#fff';
+    const saveName = `tree.jpeg`;
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = width;
+    canvas.height = height;
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    // 3. 将 canvasArr[0] 合并到创建的 canvas 中。
+    ctx.drawImage(canvasArr[0], 0, 0);
+    // 4. 创建并下载图片
+    const dataURL = canvas.toDataURL('image/jpeg');
+    const link = document.createElement('a');
+    link.download = saveName;
+    link.href = dataURL.replace('image/jpeg', 'image/octet-stream');
+    link.click();
+  }
+```
+
+火狐浏览器不兼容 `linke.click();` 的处理方式
+
+```
+  if (/Firefox/i.test(navigator.userAgent)) {
+    const evt = document.createEvent('MouseEvents');
+    evt.initEvent('click', true, true);
+    link.dispatchEvent(evt);
+  }
+```
+
+> 取 `canvasArr[0]` 的原因在上面 [两个canvas](#两个canvas) 中有解释。
+
+#### 3. 火狐浏览器不兼容滚轮缩放
+
+滚轮事件需要在初始化的时候就去监听，通过滚动方向去模拟点击 **放大和缩小** 的按钮，进而实现缩放功能。
+
+```
+  initTree(props) {
+
+    ...
+
+    // 火狐浏览器监听滚轮事件
+    if (/Firefox/i.test(navigator.userAgent)) {
+      this.graphContainer.addEventListener('DOMMouseScroll', (event) => {
+        this.onMouseWheel(event);
+      });
+    }
+  }
+```
+
+滚轮方向判断
+
+```
+  onMouseWheel = (event） {
+    const delta = Math.max(-1, Math.min(1, (event.wheelDelta || -event.detail)));
+    const zoom = delta > 0 ? '前滚动' : '后滚动';
+  }
+```

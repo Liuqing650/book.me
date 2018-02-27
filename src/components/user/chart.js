@@ -1,5 +1,6 @@
 import React, { Component, PropTypes } from 'react';
 import G6 from '@antv/g6';
+import {Button} from 'antd';
 import SideTool from './tool';
 // import html2canvas from 'html2canvas';
 import styles from './index.less';
@@ -224,49 +225,7 @@ class Chart extends Component {
    * 8. 图片下载按钮事件 download
    */
   onLeftClick = (node) => {
-    const graph = this.graph;
-    this.node = {
-      x: node.x,
-      y: node.y
-    }
-    this.domNode = {
-      x: node.domX,
-      y: node.domY
-    }
-
-    // 计算中心点的位置
-    const centerNode = this.graph.invertPoint(this.center);
-
-    const centerDom = this.graph.converPoint(centerNode);
-    console.log('centerNode-------->', centerNode);
-    console.log('centerDom-------->', centerDom);
-
-    // 获取到当前的中心点 centerNode，计算出放大后改点将位于什么位置
-
-
-
-
-
-
-
-
-
-
-
-
-    console.log('node--------->', node);
-
-    // 计算点击点，以便放到中间
-    // this.caclulationCenter(node);
-
-    // 获取缩放比例
-    // const matrix = new G6.Matrix.Matrix3();
-    // matrix.translate(-this.root.x, -this.root.y);
-    // matrix.scale(this.add, this.add);
-    // matrix.translate(this.root.x, this.root.y);
-    // graph.updateMatrix(matrix);
-    // graph.refresh();
-    // this.add = this.add + 0.1;
+    console.log('node---->', node);
   }
   onNodeClick = (node) => {
     // Tooltip.remove();
@@ -431,15 +390,14 @@ class Chart extends Component {
         this.onMouseWheel(event, true);
       });
     }
-    console.log('放大倍数---->', this.graph.getScale());
     // 拿到根节点的位置
     this.initRoot = this.graph.converPoint(0, 0);
     this.root = Object.assign({}, this.initRoot);
-    console.log('根节点放大倍数---->', this.initRoot);
+    // console.log('根节点放大倍数---->', this.initRoot);
     // Tooltip.remove();
     this.checkDownload(this.props.dataLength, 80);
     const { dataLength } = this.props;
-    console.log('treeNode--->', treeNode);
+    // console.log('treeNode--->', treeNode);
     // this.add = dataLength / 10;
   }
   createDeepTree = (props) => {
@@ -485,11 +443,18 @@ class Chart extends Component {
     });
   }
   zoom = (ratio, graph) => {
+    const center = this.center;
+    const centerNode = graph.invertPoint(center);
+    const p0 = centerNode;
+    const p1 = centerNode;
     const matrix = new G6.Matrix.Matrix3();
+    const x = p0.x + (p1.x - p0.x) * 1;
+    const y = p0.y + (p1.y - p0.y) * 1;
+    matrix.translate(-x, -y);
     matrix.scale(ratio, ratio);
-    matrix.translate(this.root.x, this.root.y);
-    graph.updateMatrix(matrix);
-    graph.refresh();
+    matrix.translate(center.x, center.y);
+    this.graph.updateMatrix(matrix);
+    this.graph.refresh();
   }
   downloadImage = (filename) => {
     const canvasArr = this.deepGraph.get('graphContainer').getElementsByTagName('canvas');
@@ -613,27 +578,6 @@ class Chart extends Component {
     this.root = moveRoot;
   }
 
-  caclulationZoomCenter = (scale) => {
-    const domNode = this.domNode;
-    const node = this.node;
-    // 计算出node将会移动的位置
-    const nodeMove = {
-      x: node.x + node.x * scale,
-      y: node.y + node.y * scale
-    }
-    // const nodeToDom = this.graph.converPoint(nodeMove);
-    const dom = {
-      x: this.root.x - node.x * scale,
-      y: this.root.y - node.y * scale
-    };
-    // this.root = dom;
-    // this.caclulationCenter(dom);
-    console.log('dom----->', dom);
-  }
-  resetTool = () => {
-    // Tooltip.remove();
-  }
-
   render() {
     const { ratio, downloadStatus } = this.state;
     const self = this;
@@ -661,6 +605,7 @@ class Chart extends Component {
         <SideTool {...sideToolProps} />
         <div id={this.graphId} className={styles.chart}></div>
         <div id={this.deepGraphId} style={{ display: 'block ' }}></div>
+        <Button onClick={() => this.onLeftClick(false)}>放大</Button>
       </div>
     );
   }
