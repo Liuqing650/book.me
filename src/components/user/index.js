@@ -1,6 +1,9 @@
 import React from 'react';
 import Chart from './chart';
+import Mock from 'mockjs';
 import styles from './index.less';
+console.log('Mock---->', Mock);
+const Random = Mock.Random;
 const User = ({
   baseData,
   dataLength
@@ -34,6 +37,20 @@ const User = ({
       console.log('data------>', data);
     }
   };
+
+
+  const data = Mock.mock({
+    'data|200-300': [
+      {
+        'id|+1': 1,
+        'name': '@cname',
+        'email': `@email('qq.com')`,
+        'address': '@city',
+        'avator': `@image('80x80', '#ffcc33', '#FFF', 'png', '@first')`
+      }
+    ]
+  })
+  console.log('mockData----->', data);
   return (
     <div className={styles.warp}>
       <Chart {...chartProps} />
