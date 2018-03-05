@@ -547,6 +547,7 @@ graph.updateMatrix(point);
     // 火狐浏览器监听滚轮事件
     if (/Firefox/i.test(navigator.userAgent)) {
       this.graphContainer.addEventListener('DOMMouseScroll', (event) => {
+        event.preventDefault();
         this.onMouseWheel(event);
       });
     }
