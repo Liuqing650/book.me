@@ -299,6 +299,7 @@ export default {
         state.baseData = {};
         let baseData = {};
         const structureMapping = (data) => {
+          console.log('data--5--->', data);
           const mapInfo = {
             companyName: data.companyName ? data.companyName : '--', // 企业名称
             frname: data.frName ? `${data.frName}(法人代表)` : '--', // 华人代表
@@ -447,7 +448,7 @@ export default {
           state.dataLength = Math.max(entinvInfo.children.length + frInfo.children.length, shareInfo.children.length);
         }
         // 短数据
-        const long = false;
+        const long = true;
 
         if (!long) {
           structureMapping(Object.assign({}, state.mockData));

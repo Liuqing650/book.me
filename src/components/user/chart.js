@@ -173,16 +173,15 @@ class Chart extends Component {
     this.deepGraph = null; // 用作下载
     this.deepGraphContainer = null;
     this.center = { x: 400, y: 300 };
-    this.position = { x: 0, y: 0 };
-    // 初始根节点的 Dom 位置
-    this.initRoot = { x: 0, y: 0};
+    // 定时器
+    this.initRoot = { x: 0, y: 0 };
+    this.nodes = [];
     // 平移后根节点的 Dom 位置
     this.root = { x: 0, y: 0 };
-    // node 节点的 (x, y)
-    this.node = { x: 0, y: 0 };
-    // dom 节点的 (domX, domY)
-    this.domNode = {x: 0, y: 0};
-    // 中点
+    this.deepBox = {};
+    this.timeKey = 0; // 定时时间函数
+    this.move = this.initRoot; // 移动位置
+    this.moveScale = 5; // 移动比例
     // 测试比例
     this.add = 1;
     // 拖拽点
@@ -226,6 +225,8 @@ class Chart extends Component {
    */
   onLeftClick = (node) => {
     console.log('node---->', node);
+    this.moveCanvas(this.graph);
+    this.timeLoop(false);
   }
   onNodeClick = (node) => {
     // Tooltip.remove();
@@ -321,17 +322,17 @@ class Chart extends Component {
     const { dataLength } = this.props;
     // if (dataLength <= 80) {
     this.createDeepTree(this.props);
-
+    this.timeLoop(true);
     // const scale = dataLength / 3;
     // console.log('scale---->', scale);
     // const width = this.center.x;
     // const height = this.center.y;
-    this.deepGraph.changeSize(window.innerWidth, window.innerHeight);
-    this.graph.autoZoom(); // 可视图层缩放到适应屏幕
+    // this.deepGraph.changeSize(window.innerWidth, window.innerHeight);
+    // this.graph.autoZoom(); // 可视图层缩放到适应屏幕
     const saveName = this.findRootInfo('treename');
-    setTimeout(() => {
-      this.downloadImage(saveName ? saveName : '');
-    }, 500);
+    // setTimeout(() => {
+    //   this.downloadImage(saveName ? saveName : '');
+    // }, 500);
     // }
   };
   /**
@@ -346,11 +347,11 @@ class Chart extends Component {
   initTree(props) {
     const graph = new G6.Tree({
       id: this.graphId,
-      fitView: 'autoZoom',
-      // fitView: {
-      //   x: 1,
-      //   y: 1
-      // },
+      // fitView: 'autoZoom',
+      fitView: {
+        x: 1,
+        y: 1
+      },
       ...props
     });
     graph.tooltip(false);
@@ -392,22 +393,23 @@ class Chart extends Component {
     }
     // 拿到根节点的位置
     this.initRoot = this.graph.converPoint(0, 0);
-    this.root = Object.assign({}, this.initRoot);
-    // console.log('根节点放大倍数---->', this.initRoot);
+    this.root = Object.assign({}, this.initRoot);    // console.log('根节点放大倍数---->', this.initRoot);
     // Tooltip.remove();
     this.checkDownload(this.props.dataLength, 80);
     const { dataLength } = this.props;
+    this.handleGraphData(this.graph);
     // console.log('treeNode--->', treeNode);
     // this.add = dataLength / 10;
   }
   createDeepTree = (props) => {
-    // console.log('dataLength------->', dataLength);
     const deepGraph = new G6.Tree({
       id: this.deepGraphId,
-      fitView: 'autoZoom',
+      fitView: {
+        x: 1,
+        y: 1
+      },
+      // fitView: 'autoZoom',
       ...props,
-      // height: Math.max(treeNode.topWidth, treeNode.bottomWidth),
-      // width: 600,
     });
     deepGraph.node().shape('treeNode');
     deepGraph.node().label((data) => {
@@ -421,6 +423,9 @@ class Chart extends Component {
     this.deepGraphContainer = deepGraph.get('graphContainer');
     this.deepGraph = deepGraph;
     this.deepGraph.render();
+    // this.initRoot = this.deepGraph.converPoint(0, 0);
+    // this.caclulationBox();
+    // this.caclulationMove(this.deepBox);
   }
   /**
    * 缩放图形、下载图片
@@ -456,6 +461,31 @@ class Chart extends Component {
     this.graph.updateMatrix(matrix);
     this.graph.refresh();
   }
+  timeLoop = (isClear) => {
+    if (!isClear) {
+      clearInterval(this.timeKey);
+      return null;
+    }
+    this.timeKey = setInterval(() => {
+      this.moveCanvas(this.deepGraph);
+      clearInterval(this.timeKey);
+    }, 500);
+  }
+  moveCanvas = (graph) => {
+    // const move = this.move;
+    const move = this.deepBox.leftBottom;
+    console.log('move---->', move);
+    // console.log('nodes---->', nodes);
+    const matrix = new G6.Matrix.Matrix3();
+    // matrix.translate(move.x, move.y);
+    matrix.translate(-move.x + this.center.x, -move.y + this.center.y);
+    graph.updateMatrix(matrix);
+    graph.refresh();
+    this.move = {
+      x: move.x + this.moveScale,
+      y: move.y,
+    };
+  }
   downloadImage = (filename) => {
     const canvasArr = this.deepGraph.get('graphContainer').getElementsByTagName('canvas');
     const { height, width } = canvasArr[0];
@@ -468,16 +498,15 @@ class Chart extends Component {
     async function createCanvas() {
       // 创建新画布，矩形填充整个画布，再次合并所有画布
       const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-      const ratio = 1;
       canvas.width = 1920;
       canvas.height = 1080;
+      const ctx = canvas.getContext('2d');
+      const ratio = 1;
       ctx.fillStyle = '#fff';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       ctx.drawImage(canvasArr[0], 0, 0, canvas.width * ratio, canvas.height * ratio);
       // 创建并下载图片
       dataURL = await canvas.toDataURL('image/jpeg');
-      console.log('dataURL---<');
       link = document.createElement('a');
       link.download = saveName;
       link.href = dataURL.replace('image/jpeg', 'image/octet-stream');
@@ -551,31 +580,136 @@ class Chart extends Component {
       downloadStatus: status
     });
   };
-  caclulationCenter = (node) => {
-    /**
-     * G6 平移测试
-     * 1. 初始根节点DOM this.initRoot
-     * 2. 移动的根节点DOM this.root, 初始于根节点相等
-     * 3. 设置画布的中点 this.center
-     * 4. 获取节点的 DOM 节点 node
-     * 5. 获取缩放比例 scale
-     * 6. 移动位置 move
-     */
-    // const scale = this.graph.getScale();
-    const move = {
-      x: this.center.x - node.domX,
-      y: this.center.y - node.domY,
+  /**
+   * 获取并处理节点数据
+   */
+  handleGraphData = (graph) => {
+    const saveData = graph.save();
+    const source = [saveData.source];
+    let output = [];
+    const loop = (arr) => {
+      arr.map((item) => {
+        const obj = {
+          x: item.x,
+          y: item.y
+        }
+        output.push(obj);
+        if (item.children) {
+          loop(item.children);
+        }
+      })
     };
-    const moveRoot = {
-      x: this.root.x + move.x,
-      y: this.root.y + move.y,
+    loop(source);
+    this.nodes = output;
+    this.caclulationBox(output);
+    this.caclulationMove(this.deepBox);
+  }
+
+  /**
+   * 计算画布的全图位置
+   * 根据 root 节点为盒子中心获取坐标
+   */
+  caclulationBox = (nodesArr) => {
+    let nodeX = [];
+    let nodeY = [];
+    let box = {
+      leftTop: {}, // 左上
+      rightTop: {}, // 右上
+      rightBottom: {}, // 右下
+      leftBottom: {} // 左下
+    };
+    nodesArr.map((item) => {
+      if (!nodeX.includes(item.x)) {
+        nodeX.push(item.x);
+      }
+      if (!nodeY.includes(item.y)) {
+        nodeY.push(item.y);
+      }
+    });
+    // 获取边缘值
+    let xmodel = {
+      max: Math.max.apply(null, nodeX),
+      min: Math.min.apply(null, nodeX),
+    };
+    let ymodel = {
+      max: Math.max.apply(null, nodeY),
+      min: Math.min.apply(null, nodeY),
+    };
+    // 左上
+    box.leftTop = {
+      x: xmodel.min,
+      y: ymodel.min
     }
-    // const movePosition = {
-    //   x: (moveRoot.x - this.initRoot.x) / scale,
-    //   y: (moveRoot.y - this.initRoot.y) / scale,
-    // }
-    // console.log('movePosition---->', movePosition);
-    this.root = moveRoot;
+    // 右上
+    box.rightTop = {
+      x: xmodel.max,
+      y: ymodel.min
+    }
+    // 右下
+    box.rightBottom = {
+      x: xmodel.max,
+      y: ymodel.max
+    }
+    // 左下
+    box.leftBottom = {
+      x: xmodel.min,
+      y: ymodel.max
+    }
+    this.deepBox = box;
+  }
+
+  /**
+   * 计算每一步将移动的位置
+   * 移动时需要有一个跟随的系数进行平移
+   */
+  caclulationMove = (boxs) => {
+    let output = [];
+    const center = this.center;
+    const deepBox = Object.assign([], boxs);
+    // 获取各个顶点位置
+    const leftTop = deepBox.leftTop;
+    const rightBottom = deepBox.rightBottom;
+    const xAxis = {
+      min: leftTop.x,
+      max: rightBottom.x,
+    };
+    const yAxis = {
+      min: leftTop.y,
+      max: rightBottom.y,
+    };
+    const handleAxis = (data, add, axis) => {
+      let idx = parseInt(data.min);
+      while (idx < data.max) {
+        const obj = {
+          x: idx,
+          y: axis
+        };
+        idx = idx + add;
+        output.push(obj);
+      }
+    };
+    handleAxis(xAxis, this.center.x * 2, this.center.y);
+    console.log('output------>', output);
+  }
+  onTestClick = () => {
+    let dataURL = {};
+    let link = {};
+    let saveName = `股权结构图.jpeg`;
+    async function createCanvas() {
+      const canvas = document.createElement('canvas');
+      canvas.width = 1920;
+      canvas.height = 1080;
+      console.log(canvas);
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      dataURL = await canvas.toDataURL('image/jpeg');
+      link = document.createElement('a');
+      link.download = saveName;
+      link.href = dataURL.replace('image/jpeg', 'image/octet-stream');
+      link.click();
+    }
+    createCanvas();
   }
 
   render() {
@@ -604,8 +738,9 @@ class Chart extends Component {
       <div className={styles.chartWrap} onBlur={this.resetTool}>
         <SideTool {...sideToolProps} />
         <div id={this.graphId} className={styles.chart}></div>
-        <div id={this.deepGraphId} style={{ display: 'block ' }}></div>
+        <div id={this.deepGraphId} className={styles.chart} style={{ display: 'block ' }}></div>
         <Button onClick={() => this.onLeftClick(false)}>放大</Button>
+        <Button onClick={() => this.onTestClick()}>测试下载</Button>
       </div>
     );
   }

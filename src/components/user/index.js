@@ -2,7 +2,6 @@ import React from 'react';
 import Chart from './chart';
 import Mock from 'mockjs';
 import styles from './index.less';
-console.log('Mock---->', Mock);
 const Random = Mock.Random;
 const User = ({
   baseData,
@@ -50,7 +49,7 @@ const User = ({
       }
     ]
   })
-  console.log('mockData----->', data);
+  // console.log('mockData----->', data);
   return (
     <div className={styles.warp}>
       <Chart {...chartProps} />

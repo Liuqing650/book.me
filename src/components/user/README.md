@@ -380,3 +380,10 @@ https://developer.mozilla.org/zh-CN/docs/Web/API/CanvasRenderingContext2D/putIma
 
 像素操作
 https://developer.mozilla.org/zh-CN/docs/Web/API/Canvas_API/Tutorial/Pixel_manipulation_with_canvas
+
+
+## 平移下载图片
+
+通过不断平移画布，并获取页面信息数据来截取并拼装图片
+
+如果只是
