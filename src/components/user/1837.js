@@ -1,6 +1,6 @@
 import React, { Component, PropTypes } from 'react';
 import G6 from '@antv/g6';
-import { Button, Progress} from 'antd';
+import { Button, Progress } from 'antd';
 import SideTool from './tool';
 // import html2canvas from 'html2canvas';
 import styles from './index.less';
@@ -252,7 +252,7 @@ class Chart extends Component {
     // console.log('item---->', item);
     // if (item && item._attrs && itemType === 'node') {
     //   const { model } = item._attrs;
-      domEvent.preventDefault();
+    domEvent.preventDefault();
     //   if (model.dataType === 1) {
     //     Tooltip.show({
     //       pageX: domEvent.pageX,
@@ -499,67 +499,28 @@ class Chart extends Component {
     this.timeLoop(false);
   }
   timeLoop = (isRun) => {
-    clearInterval(this.timeKey);
-    // ---------begin------------------------------------
     if (!isRun) {
+      clearInterval(this.timeKey);
       return null;
     }
-    const length = this.moveData.length;
-    let moveIndex = this.moveIndex;
-    const graph = this.graph;
-    // 循环扫描函数
-    const loopScan = () => {
-      console.log('---------->', moveIndex);
+    this.timeKey = setInterval(() => {
+      const length = this.moveData.length;
+      const moveIndex = this.moveIndex;
       this.move = this.moveData[moveIndex];
-      const move = this.move;
-      // 1. 移动画布
-      const matrix = new G6.Matrix.Matrix3();
-      matrix.translate(-move.x, -move.y);
-      graph.updateMatrix(matrix);
-      graph.refresh();
-      // 2. 将canvas 转为图片并存储
-      let canvasArr = graph.get('graphContainer').getElementsByTagName('canvas');
-      canvasArr[0].style.backgroundColor = '#fff'; // 设置图形层背景颜色，合并为一个canvas
-      const { height, width } = canvasArr[0];
-      const canvasChild = document.createElement('canvas');
-      canvasChild.width = width;
-      canvasChild.height = height;
-      const ctx = canvasChild.getContext('2d');
-      ctx.fillStyle = '#fff';
-      ctx.fillRect(0, 0, canvasChild.width, canvasChild.height);
-      ctx.save();
-      ctx.drawImage(canvasArr[0], 0, 0);
-      ctx.restore();
-      this.canvasToBlob(canvasChild, ((blobs) => {
-        console.log('blobs----->', blobs);
-        if (blobs) {
-          if (moveIndex === length - 1) { // 判断是否完成，未完成则继续循环调用
-            clearInterval(this.timeKey);
-            this.handleBlobs(blobs);
-          } else if (moveIndex < length - 1){
-            this.setState({
-              percent: parseInt(moveIndex / (length / 100))
-            });
-            moveIndex++;
-            loopScan();
-          }
-        }
-      }));
-    }
-    loopScan();
-    // ---------------------------------------------
-
-    // this.timeKey = setInterval(() => {
-    //   this.setState({
-    //     percent: parseInt(moveIndex / (length / 100))
-    //   });
-    //   this.moveIndex++;
-    //   this.moveCanvas(this.graph, moveIndex);
-    // }, 400);
+      this.moveCanvas(this.graph, moveIndex);
+      this.setState({
+        percent: parseInt(moveIndex / (length / 100))
+      });
+      this.moveIndex++;
+    }, 400);
   }
   moveCanvas = (graph, moveIndex) => {
     const move = this.move;
     console.log('move---->', move);
+    const matrix = new G6.Matrix.Matrix3();
+    matrix.translate(-move.x, -move.y);
+    graph.updateMatrix(matrix);
+    graph.refresh();
     this.mergeCanvas(graph, moveIndex);
     // 刷新后开始截取画布的数据进行合并
   }
@@ -609,7 +570,7 @@ class Chart extends Component {
     const center = this.center;
     this.filesToInstances(blobs, (instances) => {
       this.drawImages(instances, (imageUrl) => {
-        this.props.changeValue({ finalImageUrl: imageUrl});
+        this.props.changeValue({ finalImageUrl: imageUrl });
       })
     })
   }
@@ -928,28 +889,6 @@ class Chart extends Component {
     link.click();
   }
 
-  onGetImage = () => {
-    const graph = this.graph;
-    let canvasArr = graph.get('graphContainer').getElementsByTagName('canvas');
-    canvasArr[0].style.backgroundColor = '#fff'; // 设置图形层背景颜色，合并为一个canvas
-    const { height, width } = canvasArr[0];
-    const canvasChild = document.createElement('canvas');
-    canvasChild.width = width;
-    canvasChild.height = height;
-    const ctx = canvasChild.getContext('2d');
-    ctx.fillStyle = '#fff';
-    ctx.fillRect(0, 0, canvasChild.width, canvasChild.height);
-    ctx.save();
-    ctx.drawImage(canvasArr[0], 0, 0);
-    ctx.restore();
-    this.canvasToBlob(canvasChild, ((blobs) => {
-      console.log('blobs----->', blobs);
-      if (blobs) {
-        this.handleBlobs(blobs);
-      }
-    }));
-  }
-
   render() {
     const { ratio, downloadStatus, percent, images } = this.state;
     const { finalImageUrl } = this.props;
@@ -982,7 +921,6 @@ class Chart extends Component {
         <Progress percent={percent} status="active" />
         <Button onClick={() => this.onLeftClick(false)}>放大</Button>
         <Button onClick={() => this.onTestClick()}>测试下载</Button>
-        <Button onClick={() => this.onGetImage()}>提取图形</Button>
         <Button onClick={() => this.onStartMove()}>开始扫描</Button>
         <Button onClick={() => this.onStopMove()}>停止扫描</Button>
         <div>

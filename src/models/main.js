@@ -1,4 +1,5 @@
 import dataJson from './long.json';
+import dataTestJson from './test.json';
 export default {
 
     namespace: 'main',
@@ -10,6 +11,8 @@ export default {
       selectedMenu: 'user',
       loading: false,
       dataLength: 0,
+      finalImageUrl: '',
+      images: [],
       book: {
         id: '',
         content: null,
@@ -448,12 +451,14 @@ export default {
           state.dataLength = Math.max(entinvInfo.children.length + frInfo.children.length, shareInfo.children.length);
         }
         // 短数据
-        const long = true;
-
-        if (!long) {
-          structureMapping(Object.assign({}, state.mockData));
-        } else {
+        const long = false;
+        const test = true;
+        if (test) {
+          structureMapping(Object.assign({}, dataTestJson));
+        } else if (long) {
           structureMapping(Object.assign({}, dataJson));
+        } else {
+          structureMapping(Object.assign({}, state.mockData));
         }
         // structureMapping(Object.assign({}, state.treeData));
         state.baseData = baseData;

@@ -3,10 +3,9 @@ import Chart from './chart';
 import Mock from 'mockjs';
 import styles from './index.less';
 const Random = Mock.Random;
-const User = ({
-  baseData,
-  dataLength
-}) => {
+const User = (props) => {
+  // console.log('props-------->', props);
+  const { baseData, dataLength, onChangeValue, finalImageUrl, images } = props
   const chartProps = {
     data: baseData,
     dataLength: dataLength,
@@ -27,13 +26,15 @@ const User = ({
       }
     },
     grid: null,
+    finalImageUrl: finalImageUrl,
+    images: images,
     // grid: {
     //   forceAlign: true, // 是否支持网格对齐
     //   cell: 0,         // 网格大小
     // },
    // behaviourFilter: ['wheelZoom'], // 过滤(禁用)鼠标滚轮缩放行为
-    saveData(data) {
-      console.log('data------>', data);
+    changeValue(data) {
+      onChangeValue(data);
     }
   };
 
