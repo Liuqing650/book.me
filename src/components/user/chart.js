@@ -1,6 +1,6 @@
 import React, { Component, PropTypes } from 'react';
 import G6 from '@antv/g6';
-import { Button, Progress} from 'antd';
+import { Button, Progress, Row, Col} from 'antd';
 import SideTool from './tool';
 // import html2canvas from 'html2canvas';
 import styles from './index.less';
@@ -9,6 +9,7 @@ import styles from './index.less';
 const Global = G6.Global;
 const Util = G6.Util;
 let treeNode = {}; // 存入node 的信息
+
 function generateUniqueId(isDeep) {
   return isDeep ? `rc-g6-1` : `rc-g6-0`;
 }
@@ -166,6 +167,7 @@ class Chart extends Component {
       zoomScale: 0.1, // 初始缩放比例,
       percent: 0, // 进度条
       images: [],
+      imageSrc: '',
       file: null
     };
     // id生成函数
@@ -494,6 +496,10 @@ class Chart extends Component {
   onStartMove = () => {
     this.timeLoop(true);
   }
+  // 测试移动
+  onTestMove = (move) => {
+    this.timeRun(move);
+  }
   // 停止移动
   onStopMove = () => {
     this.timeLoop(false);
@@ -557,9 +563,33 @@ class Chart extends Component {
     //   this.moveCanvas(this.graph, moveIndex);
     // }, 400);
   }
+  timeRun = (isRun) => {
+    if (!isRun) {
+      clearInterval(this.timeKey);
+      return null;
+    }
+    this.timeKey = setInterval(() => {
+      const length = this.moveData.length;
+      const moveIndex = this.moveIndex;
+      this.move = this.moveData[moveIndex];
+      this.moveCanvas(this.graph, moveIndex);
+      // if (this.moveIndex > 98) {
+      //   clearInterval(this.timeKey);
+      // }
+      // clearInterval(this.timeKey);
+      this.setState({
+        percent: parseInt(moveIndex / (length / 100))
+      });
+      this.moveIndex++;
+    }, 100);
+  }
   moveCanvas = (graph, moveIndex) => {
     const move = this.move;
     console.log('move---->', move);
+    const matrix = new G6.Matrix.Matrix3();
+    matrix.translate(-move.x, -move.y);
+    graph.updateMatrix(matrix);
+    graph.refresh();
     this.mergeCanvas(graph, moveIndex);
     // 刷新后开始截取画布的数据进行合并
   }
@@ -581,7 +611,7 @@ class Chart extends Component {
     ctx.save();
     ctx.drawImage(canvasArr[0], 0, 0);
     ctx.restore();
-    this.canvasToBlob(canvas, ((blobs) => {
+    this.canvasToBlob(canvas, moveIndex, ((blobs) => {
       if (this.moveIndex === this.moveData.length) {
         console.log('blobs------>', blobs);
         clearInterval(this.timeKey);
@@ -594,10 +624,19 @@ class Chart extends Component {
    * canvas 转blob
    * 将临时的canvas 转为blobs
    */
-  canvasToBlob = (canvas, callback) => {
+  canvasToBlob = (canvas, moveIndex, callback) => {
+    console.log('width----->', canvas.width);
     canvas.toBlob((blob) => {
       this.cacheFiles.push(blob);
-      callback(this.cacheFiles);
+      this.filesToInstances([blob], (instances) => {
+        this.drawImagesTest(instances, (imageUrl) => {
+          this.setState({
+            imageSrc: imageUrl
+          });
+          this.onDownClick(imageUrl, moveIndex);
+          callback(this.cacheFiles);
+        })
+      })
     }, "image/png", 1);
   }
 
@@ -657,6 +696,22 @@ class Chart extends Component {
     images.forEach((item, index) => {
       const position = this.mergePosition[index];
       context.drawImage(item, position.x, position.y);
+    })
+    callback(canvas.toDataURL('image/png', 1));
+  }
+  drawImagesTest = (images, callback) => {
+    console.log('images-------->', images);
+    // this.setState({
+    //   images: images
+    // });
+    const width = 800;
+    const height = 600;
+    const canvas = document.createElement('canvas')
+    canvas.width = width;
+    canvas.height = height;
+    const context = canvas.getContext('2d');
+    images.forEach((item, index) => {
+      context.drawImage(item, 0, 0);
     })
     callback(canvas.toDataURL('image/png', 1));
   }
@@ -918,6 +973,16 @@ class Chart extends Component {
       downloadStatus: status
     });
   };
+
+  onDownClick = (src, index) => {
+    let link = {};
+    let saveName = `pic${index}.png`;
+    link = document.createElement('a');
+    link.download = saveName;
+    link.href = src.replace('image/png', 'image/octet-stream');
+    link.click();
+  }
+
   onTestClick = () => {
     let dataURL = {};
     let link = {};
@@ -951,7 +1016,7 @@ class Chart extends Component {
   }
 
   render() {
-    const { ratio, downloadStatus, percent, images } = this.state;
+    const { ratio, downloadStatus, percent, images, imageSrc } = this.state;
     const { finalImageUrl } = this.props;
     // console.log('finalImageUrl------>', finalImageUrl);
     const self = this;
@@ -976,13 +1041,28 @@ class Chart extends Component {
     };
     return (
       <div className={styles.chartWrap} onBlur={this.resetTool}>
-        <SideTool {...sideToolProps} />
-        <div id={this.graphId} className={styles.chart}></div>
+        <Row>
+          <Col span={14}>
+            <div id={this.graphId} className={styles.chart}></div>
+          </Col>
+          <Col span={6}>
+            <div>
+              {
+                imageSrc ? <img style={{width: 400}} src={imageSrc} /> : ''
+              }
+            </div>
+          </Col>
+          <Col span={1}>
+            <SideTool {...sideToolProps} />
+          </Col>
+        </Row>
         <div id={this.deepGraphId} className={styles.chart} style={{ display: 'block ' }}></div>
         <Progress percent={percent} status="active" />
         <Button onClick={() => this.onLeftClick(false)}>放大</Button>
         <Button onClick={() => this.onTestClick()}>测试下载</Button>
         <Button onClick={() => this.onGetImage()}>提取图形</Button>
+        <Button onClick={() => this.onTestMove(true)}>测试扫描</Button>
+        <Button onClick={() => this.onTestMove(false)}>停止测试</Button>
         <Button onClick={() => this.onStartMove()}>开始扫描</Button>
         <Button onClick={() => this.onStopMove()}>停止扫描</Button>
         <div>
